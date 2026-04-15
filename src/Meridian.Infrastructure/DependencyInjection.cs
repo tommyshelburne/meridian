@@ -4,6 +4,7 @@ using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Ingestion.SamGov;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
+using Meridian.Infrastructure.Outreach;
 using Meridian.Infrastructure.Scoring;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -44,6 +45,11 @@ public static class DependencyInjection
         services.AddTransient<IPocEnricher, SamGovPocEnricher>();
         services.AddHttpClient<SamGovAmendmentMonitor>();
         services.AddTransient<IBidMonitor, SamGovAmendmentMonitor>();
+
+        // Outreach
+        services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();
+        services.AddSingleton<SendThrottleState>();
+        services.AddScoped<ISequenceEngine, SequenceEngineService>();
 
         return services;
     }
