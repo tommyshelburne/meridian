@@ -1,7 +1,26 @@
+using Meridian.Application.Pipeline;
+using Meridian.Infrastructure;
 using Meridian.Worker;
+using Meridian.Worker.Jobs;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+
+// Infrastructure: DB, repositories, scoring
+var connectionString = builder.Configuration.GetConnectionString("Meridian")
+    ?? throw new InvalidOperationException("ConnectionStrings:Meridian is required");
+builder.Services.AddMeridianInfrastructure(connectionString);
+
+// Application services
+builder.Services.AddScoped<MeridianPipelineService>();
+
+// Worker jobs
+builder.Services.AddSingleton<IMeridianJob, IngestionJob>();
+builder.Services.AddSingleton<IMeridianJob, SequenceJob>();
+builder.Services.AddSingleton<IMeridianJob, ReplyMonitorJob>();
+builder.Services.AddSingleton<IMeridianJob, BidMonitorJob>();
+
+// Hosted service
+builder.Services.AddHostedService<MeridianWorker>();
 
 var host = builder.Build();
 host.Run();
