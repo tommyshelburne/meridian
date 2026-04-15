@@ -1,0 +1,66 @@
+using Meridian.Application.Ports;
+using Meridian.Domain.Common;
+using Meridian.Domain.Outreach;
+using Microsoft.EntityFrameworkCore;
+
+namespace Meridian.Infrastructure.Persistence.Repositories;
+
+public class OutreachRepository : IOutreachRepository
+{
+    private readonly MeridianDbContext _db;
+
+    public OutreachRepository(MeridianDbContext db) => _db = db;
+
+    public async Task<OutreachEnrollment?> GetEnrollmentByIdAsync(Guid id, CancellationToken ct)
+        => await _db.OutreachEnrollments.FirstOrDefaultAsync(e => e.Id == id, ct);
+
+    public async Task<OutreachEnrollment?> GetEnrollmentAsync(Guid tenantId, Guid contactId, Guid opportunityId, CancellationToken ct)
+        => await _db.OutreachEnrollments.FirstOrDefaultAsync(
+            e => e.ContactId == contactId && e.OpportunityId == opportunityId, ct);
+
+    public async Task<IReadOnlyList<OutreachEnrollment>> GetDueEnrollmentsAsync(Guid tenantId, DateTimeOffset asOf, CancellationToken ct)
+        => await _db.OutreachEnrollments
+            .Where(e => e.Status == EnrollmentStatus.Active && e.NextSendAt != null && e.NextSendAt <= asOf)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<OutreachEnrollment>> GetEnrollmentsByStatusAsync(Guid tenantId, EnrollmentStatus status, CancellationToken ct)
+        => await _db.OutreachEnrollments.Where(e => e.Status == status).ToListAsync(ct);
+
+    public async Task AddEnrollmentAsync(OutreachEnrollment enrollment, CancellationToken ct)
+        => await _db.OutreachEnrollments.AddAsync(enrollment, ct);
+
+    public async Task<OutreachSequence?> GetSequenceByIdAsync(Guid id, CancellationToken ct)
+        => await _db.OutreachSequences.Include(s => s.Steps).FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public async Task<IReadOnlyList<OutreachSequence>> GetSequencesAsync(Guid tenantId, CancellationToken ct)
+        => await _db.OutreachSequences.Include(s => s.Steps).ToListAsync(ct);
+
+    public async Task AddSequenceAsync(OutreachSequence sequence, CancellationToken ct)
+        => await _db.OutreachSequences.AddAsync(sequence, ct);
+
+    public async Task<OutreachTemplate?> GetTemplateByIdAsync(Guid id, CancellationToken ct)
+        => await _db.OutreachTemplates.FirstOrDefaultAsync(t => t.Id == id, ct);
+
+    public async Task AddTemplateAsync(OutreachTemplate template, CancellationToken ct)
+        => await _db.OutreachTemplates.AddAsync(template, ct);
+
+    public async Task<SequenceSnapshot?> GetSnapshotByIdAsync(Guid id, CancellationToken ct)
+        => await _db.SequenceSnapshots.FirstOrDefaultAsync(s => s.Id == id, ct);
+
+    public async Task AddSnapshotAsync(SequenceSnapshot snapshot, CancellationToken ct)
+        => await _db.SequenceSnapshots.AddAsync(snapshot, ct);
+
+    public async Task<EmailActivity?> GetEmailByMessageIdAsync(Guid tenantId, string messageId, CancellationToken ct)
+        => await _db.EmailActivities.FirstOrDefaultAsync(e => e.MessageId == messageId, ct);
+
+    public async Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid tenantId, string normalizedSubject, Guid contactId, CancellationToken ct)
+        => await _db.EmailActivities
+            .Where(e => e.ContactId == contactId && e.Subject.ToLower().Replace("re: ", "") == normalizedSubject.ToLower())
+            .OrderByDescending(e => e.SentAt)
+            .FirstOrDefaultAsync(ct);
+
+    public async Task AddEmailActivityAsync(EmailActivity activity, CancellationToken ct)
+        => await _db.EmailActivities.AddAsync(activity, ct);
+
+    public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
+}

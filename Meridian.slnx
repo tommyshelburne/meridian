@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Meridian.Application/Meridian.Application.csproj" />
+    <Project Path="src/Meridian.Domain/Meridian.Domain.csproj" />
+    <Project Path="src/Meridian.Infrastructure/Meridian.Infrastructure.csproj" />
+    <Project Path="src/Meridian.Portal/Meridian.Portal.csproj" />
+    <Project Path="src/Meridian.Worker/Meridian.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Meridian.E2E/Meridian.E2E.csproj" />
+    <Project Path="tests/Meridian.Integration/Meridian.Integration.csproj" />
+    <Project Path="tests/Meridian.Unit/Meridian.Unit.csproj" />
+  </Folder>
+</Solution>
