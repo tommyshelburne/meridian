@@ -8,7 +8,7 @@ var builder = Host.CreateApplicationBuilder(args);
 // Infrastructure: DB, repositories, scoring
 var connectionString = builder.Configuration.GetConnectionString("Meridian")
     ?? throw new InvalidOperationException("ConnectionStrings:Meridian is required");
-builder.Services.AddMeridianInfrastructure(connectionString);
+builder.Services.AddMeridianInfrastructure(connectionString, builder.Configuration);
 
 // Application services
 builder.Services.AddScoped<MeridianPipelineService>();

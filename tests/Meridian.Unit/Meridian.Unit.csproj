@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Meridian.Domain\Meridian.Domain.csproj" />
     <ProjectReference Include="..\..\src\Meridian.Application\Meridian.Application.csproj" />
+    <ProjectReference Include="..\..\src\Meridian.Infrastructure\Meridian.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
