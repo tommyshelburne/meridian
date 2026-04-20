@@ -94,39 +94,6 @@ public class SamGovClientTests
     }
 
     [Fact]
-    public async Task Detects_recompete_from_description()
-    {
-        var client = CreateClient(_ => JsonResponse(CreateSearchResponse(
-            new SamGovOpportunity
-            {
-                NoticeId = "SAM-002",
-                Title = "IVR Modernization",
-                Description = "Recompete of existing Nuance contract for IVR services"
-            })));
-
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
-
-        result.Value![0].IsRecompete.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task Estimates_seats_from_award_amount()
-    {
-        var client = CreateClient(_ => JsonResponse(CreateSearchResponse(
-            new SamGovOpportunity
-            {
-                NoticeId = "SAM-003",
-                Title = "Call Center Operations",
-                Award = new SamGovAward { Amount = 5_000_000m }
-            })));
-
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
-
-        // 5,000,000 / 199 / 12 ≈ 2,093 seats
-        result.Value![0].EstimatedSeats.Should().BeGreaterThan(2000);
-    }
-
-    [Fact]
     public async Task Classifies_defense_agency()
     {
         var client = CreateClient(_ => JsonResponse(CreateSearchResponse(
@@ -141,23 +108,6 @@ public class SamGovClientTests
         var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
 
         result.Value![0].Agency.Type.Should().Be(AgencyType.FederalDefense);
-    }
-
-    [Fact]
-    public async Task Classifies_tier_1_agency()
-    {
-        var client = CreateClient(_ => JsonResponse(CreateSearchResponse(
-            new SamGovOpportunity
-            {
-                NoticeId = "SAM-005",
-                Title = "Customer Service Center",
-                Department = "Department of Veterans Affairs",
-                SubTier = "Veterans Affairs"
-            })));
-
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
-
-        result.Value![0].Agency.Tier.Should().Be(1);
     }
 
     [Fact]

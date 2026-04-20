@@ -1,11 +1,13 @@
 # Meridian Portal — UI/UX Specification
-**Version:** 1.0  
-**Date:** 2026-04-14  
-**Author:** Tommy Shelburne (KomBea) + Claw  
-**Status:** Approved for build  
-**Stack:** ASP.NET Core + Blazor Server  
-**Auth:** Microsoft Entra ID SSO (OIDC)  
+**Version:** 1.0
+**Date:** 2026-04-14
+**Author:** Tommy Shelburne (KomBea) + Claw
+**Status:** SUPERSEDED by `portal-spec-v1-2026-04-19.md` (2026-04-19 product pivot)
+**Stack:** ASP.NET Core + Blazor Server
+**Auth:** Microsoft Entra ID SSO (OIDC)
 **Initial users:** Tommy Shelburne, Angel Shelburne, Art Coombs
+
+> **Note (2026-04-19):** This spec assumed KomBea-internal scope with hardcoded users and Entra-only SSO. Retained for historical context. See `portal-spec-v1-2026-04-19.md` for the current company-agnostic product spec.
 
 ---
 

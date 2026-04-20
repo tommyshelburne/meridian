@@ -8,7 +8,7 @@ namespace Meridian.Unit.Domain;
 public class OpportunityTests
 {
     private static readonly Guid TenantId = Guid.NewGuid();
-    private static readonly Agency TestAgency = Agency.Create("VA", AgencyType.FederalCivilian, 1);
+    private static readonly Agency TestAgency = Agency.Create("VA", AgencyType.FederalCivilian);
 
     [Fact]
     public void Create_sets_status_to_New()
@@ -36,10 +36,22 @@ public class OpportunityTests
         var opp = Opportunity.Create(TenantId, "SAM-123", OpportunitySource.SamGov,
             "Contact Center", "Desc", TestAgency, DateTimeOffset.UtcNow);
 
-        var noBidScore = BidScore.Create(0, 1, 0, 0, 0, 0, 0, 0);
-        opp.ApplyScore(noBidScore);
+        opp.ApplyScore(BidScore.Create(2, ScoreVerdict.NoBid));
 
         opp.Status.Should().Be(OpportunityStatus.NoBid);
+    }
+
+    [Fact]
+    public void ApplyScore_pursue_marks_scored()
+    {
+        var opp = Opportunity.Create(TenantId, "SAM-123", OpportunitySource.SamGov,
+            "Contact Center", "Desc", TestAgency, DateTimeOffset.UtcNow);
+
+        opp.ApplyScore(BidScore.Create(12, ScoreVerdict.Pursue));
+
+        opp.Status.Should().Be(OpportunityStatus.Scored);
+        opp.Score!.Total.Should().Be(12);
+        opp.Score.Verdict.Should().Be(ScoreVerdict.Pursue);
     }
 
     [Fact]
@@ -65,17 +77,5 @@ public class OpportunityTests
         opp.AddContact(OpportunityContact.Create(opp.Id, contactId));
 
         opp.Contacts.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public void SetSeatEstimate_stores_seats_and_confidence()
-    {
-        var opp = Opportunity.Create(TenantId, "SAM-123", OpportunitySource.SamGov,
-            "Contact Center", "Desc", TestAgency, DateTimeOffset.UtcNow);
-
-        opp.SetSeatEstimate(200, SeatEstimateConfidence.High);
-
-        opp.EstimatedSeats.Should().Be(200);
-        opp.SeatConfidence.Should().Be(SeatEstimateConfidence.High);
     }
 }

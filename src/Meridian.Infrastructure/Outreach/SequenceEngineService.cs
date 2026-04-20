@@ -105,11 +105,11 @@ public class SequenceEngineService : ISequenceEngine
                 if (jitterMs > 0)
                     await Task.Delay(jitterMs, ct);
 
-                // Send
+                // Send — sender identity will be sourced from tenant outbound settings in a later phase
                 var message = new EmailMessage(
                     contact.Email,
-                    "outreach@kombea.com",
-                    "KomBea Corporation",
+                    "outreach@meridian.local",
+                    "Meridian",
                     subjectResult.Value!,
                     bodyResult.Value!);
 

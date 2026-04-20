@@ -1,0 +1,52 @@
+@page "/app/{Slug}"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject Meridian.Application.Auth.TenantManagementService TenantMgmt
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState
+
+<PageTitle>Dashboard · Meridian</PageTitle>
+
+<h1>@(_tenantName ?? "Workspace")</h1>
+<p class="lead">Welcome back, @_firstName.</p>
+
+<section class="card-grid">
+    <article class="card">
+        <h2>Opportunities</h2>
+        <p>Pipeline ingestion starts once Phase 2 ships.</p>
+    </article>
+    <article class="card">
+        <h2>Members</h2>
+        <p><a href="/app/@Slug/members">Invite teammates</a> to collaborate.</p>
+    </article>
+    <article class="card">
+        <h2>Settings</h2>
+        <p>Rename your workspace or manage integrations in <a href="/app/@Slug/settings">settings</a>.</p>
+    </article>
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    private string? _tenantName;
+    private string? _firstName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tenantIdClaim = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tenantIdClaim, out var tenantId))
+        {
+            var tenant = await TenantMgmt.GetAsync(tenantId, CancellationToken.None);
+            _tenantName = tenant?.Name;
+        }
+        _firstName = state.User.Identity?.Name?.Split(' ').FirstOrDefault();
+    }
+}
+
+<style>
+    .lead { color: #6a6e82; margin-top: -0.5rem; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.5rem; }
+    .card h2 { margin: 0 0 0.5rem; font-size: 1rem; color: #1a1c2d; }
+    .card p { margin: 0; color: #6a6e82; font-size: 0.9rem; }
+    .card a { color: #4b6bfb; }
+</style>

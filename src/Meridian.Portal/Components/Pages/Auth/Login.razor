@@ -1,0 +1,67 @@
+@page "/login"
+@layout PublicLayout
+
+<PageTitle>Sign in · Meridian</PageTitle>
+
+<section class="auth-card">
+    <h1>Sign in</h1>
+
+    @if (TwoFactor)
+    {
+        <p>Enter the 6-digit code from your authenticator app.</p>
+    }
+
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="auth-error" role="alert">@ErrorMessage()</div>
+    }
+
+    @if (Reset == "1")
+    {
+        <div class="auth-ok" role="status">Password updated. Sign in with your new password.</div>
+    }
+
+    <form method="post" action="/auth/login">
+        <AntiforgeryToken />
+
+        <label>Email
+            <input type="email" name="Email" value="@Email" required autocomplete="email" readonly="@TwoFactor" />
+        </label>
+
+        <label>Password
+            <input type="password" name="Password" required autocomplete="current-password" />
+        </label>
+
+        @if (TwoFactor)
+        {
+            <label>Authenticator code
+                <input type="text" name="TotpCode" inputmode="numeric" pattern="[0-9]{6}"
+                       autocomplete="one-time-code" required />
+            </label>
+        }
+
+        <button type="submit">@(TwoFactor ? "Verify" : "Sign in")</button>
+    </form>
+
+    <p class="auth-meta"><a href="/forgot-password">Forgot password?</a></p>
+    <p class="auth-meta">New to Meridian? <a href="/signup">Create a workspace</a></p>
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "twofactor")] public string? TwoFactorFlag { get; set; }
+    [SupplyParameterFromQuery] public string? Reset { get; set; }
+
+    private bool TwoFactor => TwoFactorFlag == "1";
+
+    private string ErrorMessage() => Error switch
+    {
+        "unverified" => "Please verify your email before signing in.",
+        "locked" => "Account temporarily locked after too many failed attempts. Try again later.",
+        "disabled" => "This account is disabled. Contact your workspace owner.",
+        "no-workspace" => "No active workspace found for this account.",
+        "invalid-code" => "That code wasn't valid. Try again.",
+        _ => "Email or password is incorrect."
+    };
+}

@@ -1,0 +1,14 @@
+@page "/verify-email-sent"
+@layout PublicLayout
+
+<PageTitle>Check your email · Meridian</PageTitle>
+
+<section class="auth-card">
+    <h1>Check your email</h1>
+    <p>We sent a verification link to <strong>@Email</strong>. The link expires in 24 hours.</p>
+    <p class="auth-meta">Didn't get it? Check spam, or <a href="/signup">start over</a>.</p>
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+}

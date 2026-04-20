@@ -1,0 +1,13 @@
+@inherits LayoutComponentBase
+
+<div class="public-shell">
+    <header class="public-header">
+        <a href="/" class="brand">Meridian</a>
+    </header>
+    <main class="public-main">
+        @Body
+    </main>
+    <footer class="public-footer">
+        <span>© @DateTime.UtcNow.Year Meridian</span>
+    </footer>
+</div>

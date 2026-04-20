@@ -1,0 +1,123 @@
+.public-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f6f7fb;
+}
+
+.public-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e3e6ef;
+    background: white;
+}
+
+.public-header .brand {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #1a1c2d;
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+
+.public-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.public-footer {
+    padding: 1rem 2rem;
+    text-align: center;
+    color: #6a6e82;
+    font-size: 0.85rem;
+}
+
+::deep .auth-card {
+    width: 100%;
+    max-width: 26rem;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(26, 28, 45, 0.08);
+}
+
+::deep .auth-card h1 {
+    margin: 0 0 1.25rem;
+    font-size: 1.5rem;
+    color: #1a1c2d;
+}
+
+::deep .auth-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+::deep .auth-card label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #3a3d52;
+}
+
+::deep .auth-card input {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #cfd3e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: white;
+}
+
+::deep .auth-card input:focus {
+    outline: 2px solid #4b6bfb;
+    outline-offset: -1px;
+    border-color: #4b6bfb;
+}
+
+::deep .auth-card small {
+    color: #6a6e82;
+    font-size: 0.8rem;
+}
+
+::deep .auth-card button {
+    padding: 0.7rem 1rem;
+    background: #2a3552;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+::deep .auth-card button:hover { background: #1e263e; }
+
+::deep .auth-meta {
+    margin: 1.25rem 0 0;
+    font-size: 0.9rem;
+    color: #6a6e82;
+    text-align: center;
+}
+
+::deep .auth-error {
+    padding: 0.75rem 1rem;
+    background: #fdecec;
+    border: 1px solid #f5b3b3;
+    color: #8a1717;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+::deep .auth-ok {
+    padding: 0.75rem 1rem;
+    background: #e9f6ec;
+    border: 1px solid #a9d9b3;
+    color: #1f5f2a;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}

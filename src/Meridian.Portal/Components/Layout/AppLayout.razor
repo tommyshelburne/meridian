@@ -1,0 +1,42 @@
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Nav
+
+<AuthorizeView>
+    <Authorized>
+        <div class="app-shell">
+            <aside class="app-sidebar">
+                <a class="brand" href="/app/@TenantSlug(context.User)">Meridian</a>
+                <nav>
+                    <a href="/app/@TenantSlug(context.User)">Dashboard</a>
+                    <a href="/app/@TenantSlug(context.User)/members">Members</a>
+                    <a href="/app/@TenantSlug(context.User)/settings">Settings</a>
+                </nav>
+                <form method="post" action="/auth/logout" class="logout-form">
+                    <AntiforgeryToken />
+                    <button type="submit">Sign out</button>
+                </form>
+            </aside>
+            <main class="app-main">
+                <header class="app-topbar">
+                    <div class="user-meta">
+                        <span class="user-name">@context.User.Identity!.Name</span>
+                        <span class="user-role">@context.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                    </div>
+                </header>
+                <div class="app-content">
+                    @Body
+                </div>
+            </main>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @{ Nav.NavigateTo($"/login?return={Uri.EscapeDataString(Nav.Uri)}", forceLoad: true); }
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private static string TenantSlug(System.Security.Claims.ClaimsPrincipal user) =>
+        user.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantSlugClaim)?.Value ?? "";
+}

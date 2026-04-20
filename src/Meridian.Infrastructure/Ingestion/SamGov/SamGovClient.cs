@@ -103,8 +103,7 @@ public class SamGovClient : IOpportunitySource
 
         var agencyName = sam.SubTier ?? sam.Department ?? "Unknown Agency";
         var agencyType = ClassifyAgencyType(sam.Department);
-        var agencyTier = ClassifyAgencyTier(agencyName);
-        var agency = Agency.Create(agencyName, agencyType, agencyTier);
+        var agency = Agency.Create(agencyName, agencyType);
 
         DateTimeOffset? postedDate = TryParseDate(sam.PostedDate);
         DateTimeOffset? deadline = TryParseDate(sam.ResponseDeadline);
@@ -121,25 +120,6 @@ public class SamGovClient : IOpportunitySource
             sam.NaicsCode,
             sam.Award?.Amount);
 
-        // Detect recompete from title/description signals
-        var text = $"{sam.Title} {sam.Description}".ToLowerInvariant();
-        if (text.Contains("recompete") || text.Contains("re-compete") ||
-            text.Contains("incumbent") || text.Contains("bridge contract") ||
-            text.Contains("follow-on"))
-        {
-            opp.MarkRecompete();
-        }
-
-        // Estimate seats from award amount if available
-        if (sam.Award?.Amount is > 0)
-        {
-            var estimatedSeats = (int)(sam.Award.Amount.Value / 199m / 12m);
-            var confidence = estimatedSeats > 200
-                ? SeatEstimateConfidence.Medium
-                : SeatEstimateConfidence.Low;
-            opp.SetSeatEstimate(estimatedSeats, confidence);
-        }
-
         return opp;
     }
 
@@ -153,19 +133,6 @@ public class SamGovClient : IOpportunitySource
             return AgencyType.FederalDefense;
 
         return AgencyType.FederalCivilian;
-    }
-
-    private static int ClassifyAgencyTier(string agencyName)
-    {
-        var tier1 = new[] { "VA", "Veterans Affairs", "HHS", "Health and Human Services",
-            "GSA", "General Services", "DoL", "Department of Labor",
-            "FDA", "Food and Drug", "Social Security", "SSA" };
-        var tier2 = new[] { "DTS", "DWS", "DMV", "DHHS", "Workforce Services" };
-
-        var nameLower = agencyName.ToLowerInvariant();
-        if (tier1.Any(t => nameLower.Contains(t.ToLowerInvariant()))) return 1;
-        if (tier2.Any(t => nameLower.Contains(t.ToLowerInvariant()))) return 2;
-        return 0;
     }
 
     internal static DateTimeOffset? TryParseDatePublic(string? dateStr) => TryParseDate(dateStr);

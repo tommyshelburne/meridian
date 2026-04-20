@@ -7,7 +7,7 @@ namespace Meridian.Unit.Domain;
 public class ContactTests
 {
     private static readonly Guid TenantId = Guid.NewGuid();
-    private static readonly Agency TestAgency = Agency.Create("VA", AgencyType.FederalCivilian, 1);
+    private static readonly Agency TestAgency = Agency.Create("VA", AgencyType.FederalCivilian);
 
     [Fact]
     public void Create_sets_all_fields()

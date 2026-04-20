@@ -1,0 +1,96 @@
+.app-shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+    background: #f6f7fb;
+}
+
+.app-sidebar {
+    background: #1a1c2d;
+    color: #d6d8e5;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+}
+
+.app-sidebar .brand {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.app-sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 1rem;
+}
+
+.app-sidebar nav a {
+    padding: 0.5rem 0.75rem;
+    color: #d6d8e5;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+.app-sidebar nav a:hover { background: #2a2d42; color: white; }
+
+.logout-form {
+    margin-top: auto;
+}
+
+.logout-form button {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    color: #d6d8e5;
+    border: 1px solid #3b3f56;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.logout-form button:hover { border-color: #d6d8e5; color: white; }
+
+.app-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-topbar {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #e3e6ef;
+    background: white;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.user-meta {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.user-name { color: #1a1c2d; font-weight: 600; }
+.user-role {
+    background: #eef0fb;
+    color: #3b4694;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.app-content {
+    padding: 2rem;
+    max-width: 70rem;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}

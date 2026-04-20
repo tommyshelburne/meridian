@@ -1,0 +1,48 @@
+@page "/signup"
+@layout PublicLayout
+
+<PageTitle>Sign up · Meridian</PageTitle>
+
+<section class="auth-card">
+    <h1>Create your Meridian workspace</h1>
+
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="auth-error" role="alert">@Error</div>
+    }
+
+    <form method="post" action="/auth/signup">
+        <AntiforgeryToken />
+
+        <label>Full name
+            <input type="text" name="FullName" required autocomplete="name" />
+        </label>
+
+        <label>Work email
+            <input type="email" name="Email" required autocomplete="email" />
+        </label>
+
+        <label>Password
+            <input type="password" name="Password" required minlength="12" autocomplete="new-password" />
+            <small>At least 12 characters.</small>
+        </label>
+
+        <label>Workspace name
+            <input type="text" name="TenantName" required />
+        </label>
+
+        <label>Workspace URL
+            <input type="text" name="TenantSlug" required pattern="[a-z0-9][a-z0-9\-]{1,62}[a-z0-9]"
+                   placeholder="acme" autocapitalize="off" />
+            <small>Lowercase letters, numbers and hyphens. 3–64 characters.</small>
+        </label>
+
+        <button type="submit">Create workspace</button>
+    </form>
+
+    <p class="auth-meta">Already have an account? <a href="/login">Sign in</a></p>
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+}

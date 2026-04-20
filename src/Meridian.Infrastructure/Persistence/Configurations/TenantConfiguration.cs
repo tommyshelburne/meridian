@@ -12,6 +12,12 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.HasKey(t => t.Id);
         builder.Property(t => t.Id).HasColumnName("id");
         builder.Property(t => t.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
+        builder.Property(t => t.Slug).HasColumnName("slug").HasMaxLength(64).IsRequired();
+        builder.Property(t => t.Plan).HasColumnName("plan").HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(t => t.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(30).IsRequired();
         builder.Property(t => t.CreatedAt).HasColumnName("created_at");
+        builder.Property(t => t.UpdatedAt).HasColumnName("updated_at");
+
+        builder.HasIndex(t => t.Slug).IsUnique();
     }
 }

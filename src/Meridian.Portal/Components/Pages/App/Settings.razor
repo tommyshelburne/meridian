@@ -1,0 +1,59 @@
+@page "/app/{Slug}/settings"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+
+<PageTitle>Settings · Meridian</PageTitle>
+
+<h1>Workspace settings</h1>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Workspace updated.</div>
+}
+
+<section class="settings-section">
+    <h2>General</h2>
+    <form method="post" action="/app/@Slug/settings/rename">
+        <AntiforgeryToken />
+        <label>Workspace name
+            <input type="text" name="Name" value="@_tenantName" required />
+        </label>
+        <div class="meta">Slug (URL) cannot be changed today.</div>
+        <button type="submit">Save</button>
+    </form>
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private Meridian.Application.Auth.TenantManagementService TenantMgmt { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private string? _tenantName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _tenantName = (await TenantMgmt.GetAsync(tenantId, CancellationToken.None))?.Name;
+    }
+}
+
+<style>
+    .settings-section { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.5rem; max-width: 32rem; }
+    .settings-section h2 { margin: 0 0 1rem; font-size: 1rem; }
+    .settings-section form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .settings-section label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .settings-section input { padding: 0.6rem 0.75rem; border: 1px solid #cfd3e0; border-radius: 6px; }
+    .settings-section .meta { color: #6a6e82; font-size: 0.85rem; }
+    .settings-section button { padding: 0.6rem 1rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+</style>

@@ -1,6 +1,8 @@
+using Meridian.Application.Auth;
 using Meridian.Application.Ports;
-using Meridian.Domain.Scoring;
 using Meridian.Domain.Tenants;
+using Meridian.Infrastructure.Auth;
+using Meridian.Infrastructure.Email;
 using Meridian.Infrastructure.Ingestion.SamGov;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
@@ -31,10 +33,13 @@ public static class DependencyInjection
         services.AddScoped<IOutreachRepository, OutreachRepository>();
         services.AddScoped<IAuditLog, AuditLogRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<IMarketProfileRepository, MarketProfileRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserTenantRepository, UserTenantRepository>();
+        services.AddScoped<IAuthTokenRepository, AuthTokenRepository>();
+        services.AddScoped<IOidcConfigRepository, OidcConfigRepository>();
 
-        // Scoring
-        services.AddSingleton(_ => ScoringConfig.KomBeaDefault);
-        services.AddSingleton<BidScoringEngine>();
+        // Scoring — rule-based engine arrives in Phase 4; this is a placeholder
         services.AddSingleton<IScoringEngine, ScoringEngineAdapter>();
 
         // SAM.gov
@@ -50,6 +55,23 @@ public static class DependencyInjection
         services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();
         services.AddSingleton<SendThrottleState>();
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
+
+        // Auth services
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddSingleton<ITokenIssuer, JwtTokenIssuer>();
+        services.AddSingleton<ITotpService, TotpService>();
+        services.AddSingleton<ITokenHasher, TokenHasher>();
+
+        var authEmail = new AuthEmailOptions();
+        configuration.GetSection(AuthEmailOptions.SectionName).Bind(authEmail);
+        services.AddSingleton(authEmail);
+        services.AddScoped<AuthService>();
+        services.AddScoped<MembershipService>();
+        services.AddScoped<TenantManagementService>();
+
+        // Email
+        services.AddSingleton<IEmailSender, ConsoleEmailSender>();
 
         return services;
     }

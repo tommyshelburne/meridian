@@ -13,13 +13,10 @@ public class Opportunity
     public string Description { get; private set; } = null!;
     public Agency Agency { get; private set; } = null!;
     public decimal? EstimatedValue { get; private set; }
-    public int? EstimatedSeats { get; private set; }
-    public SeatEstimateConfidence SeatConfidence { get; private set; }
     public DateTimeOffset PostedDate { get; private set; }
     public DateTimeOffset? ResponseDeadline { get; private set; }
     public string? NaicsCode { get; private set; }
     public ProcurementVehicle? ProcurementVehicle { get; private set; }
-    public bool IsRecompete { get; private set; }
     public BidScore? Score { get; private set; }
     public OpportunityStatus Status { get; private set; }
     public DateTimeOffset? WatchedSince { get; private set; }
@@ -60,7 +57,6 @@ public class Opportunity
             NaicsCode = naicsCode,
             EstimatedValue = estimatedValue,
             ProcurementVehicle = procurementVehicle,
-            SeatConfidence = SeatEstimateConfidence.Unknown,
             Status = OpportunityStatus.New
         };
     }
@@ -76,14 +72,6 @@ public class Opportunity
             _ => OpportunityStatus.Scored
         };
     }
-
-    public void SetSeatEstimate(int seats, SeatEstimateConfidence confidence)
-    {
-        EstimatedSeats = seats;
-        SeatConfidence = confidence;
-    }
-
-    public void MarkRecompete() => IsRecompete = true;
 
     public void Watch()
     {

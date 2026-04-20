@@ -1,0 +1,112 @@
+@page "/app/{Slug}/members"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Domain.Users
+
+<PageTitle>Members · Meridian</PageTitle>
+
+<h1>Workspace members</h1>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Invited == "1")
+{
+    <div class="auth-ok" role="status">Invitation sent.</div>
+}
+
+<section class="members-table">
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var m in _members)
+            {
+                <tr>
+                    <td>@m.FullName</td>
+                    <td>@m.Email</td>
+                    <td>@m.Role</td>
+                    <td>@m.Status</td>
+                    <td class="row-actions">
+                        <AuthorizeView Roles="Owner,Admin" Context="authCtx">
+                            <Authorized>
+                                @if (m.UserId != _currentUserId)
+                                {
+                                    <form method="post" action="/app/@Slug/members/remove" class="inline">
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="UserId" value="@m.UserId" />
+                                        <button type="submit" class="link-danger">Remove</button>
+                                    </form>
+                                }
+                            </Authorized>
+                        </AuthorizeView>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<AuthorizeView Roles="Owner,Admin">
+    <Authorized>
+        <section class="invite-section">
+            <h2>Invite a teammate</h2>
+            <form method="post" action="/app/@Slug/members/invite">
+                <AntiforgeryToken />
+                <label>Full name <input type="text" name="FullName" required /></label>
+                <label>Email <input type="email" name="Email" required /></label>
+                <label>Role
+                    <select name="Role">
+                        <option value="Admin">Admin</option>
+                        <option value="Operator" selected>Operator</option>
+                        <option value="Viewer">Viewer</option>
+                    </select>
+                </label>
+                <button type="submit">Send invitation</button>
+            </form>
+        </section>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Invited { get; set; }
+
+    [Inject] private Meridian.Application.Auth.MembershipService Memberships { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<Meridian.Application.Auth.MemberSummary> _members = Array.Empty<Meridian.Application.Auth.MemberSummary>();
+    private Guid? _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        var uid = state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(uid, out var parsedUid)) _currentUserId = parsedUid;
+        if (Guid.TryParse(tid, out var tenantId))
+            _members = await Memberships.GetMembersAsync(tenantId, CancellationToken.None);
+    }
+}
+
+<style>
+    .members-table { background: white; border: 1px solid #e3e6ef; border-radius: 10px; overflow: hidden; }
+    .members-table table { width: 100%; border-collapse: collapse; }
+    .members-table th, .members-table td { padding: 0.75rem 1rem; text-align: left; font-size: 0.9rem; border-bottom: 1px solid #eef0f6; }
+    .members-table th { color: #6a6e82; font-weight: 600; background: #fafbff; }
+    .row-actions { text-align: right; }
+    .link-danger { background: none; border: none; color: #b43a3a; cursor: pointer; padding: 0; font: inherit; }
+    .link-danger:hover { text-decoration: underline; }
+    .inline { display: inline; margin: 0; }
+    .invite-section { margin-top: 1.5rem; background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.5rem; max-width: 32rem; }
+    .invite-section h2 { margin: 0 0 1rem; font-size: 1rem; }
+    .invite-section form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .invite-section label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .invite-section input, .invite-section select { padding: 0.6rem 0.75rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 1rem; }
+    .invite-section button { padding: 0.6rem 1rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+</style>

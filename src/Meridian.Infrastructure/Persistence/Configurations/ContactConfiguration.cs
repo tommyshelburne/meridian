@@ -28,7 +28,6 @@ public class ContactConfiguration : IEntityTypeConfiguration<Contact>
         {
             a.Property(x => x.Name).HasColumnName("agency_name").HasMaxLength(500).IsRequired();
             a.Property(x => x.Type).HasColumnName("agency_type").HasConversion<string>().HasMaxLength(30);
-            a.Property(x => x.Tier).HasColumnName("agency_tier");
             a.Property(x => x.State).HasColumnName("agency_state").HasMaxLength(5);
         });
 

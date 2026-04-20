@@ -81,7 +81,7 @@ public class LiquidTemplateRendererTests
             I noticed the {{ opportunity.title }} posted by {{ agency.name }}
             with a response deadline of {{ opportunity.deadline }}.
 
-            KomBea specializes in contact center solutions and we'd welcome
+            Our team specializes in contact center solutions and we'd welcome
             the opportunity to discuss how we might support this initiative.
 
             Best regards,

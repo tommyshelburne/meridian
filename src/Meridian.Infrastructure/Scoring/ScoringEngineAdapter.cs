@@ -1,4 +1,5 @@
 using Meridian.Application.Ports;
+using Meridian.Domain.Common;
 using Meridian.Domain.Opportunities;
 using Meridian.Domain.Scoring;
 
@@ -6,12 +7,6 @@ namespace Meridian.Infrastructure.Scoring;
 
 public class ScoringEngineAdapter : IScoringEngine
 {
-    private readonly BidScoringEngine _engine;
-
-    public ScoringEngineAdapter(BidScoringEngine engine)
-    {
-        _engine = engine;
-    }
-
-    public BidScore Score(Opportunity opportunity) => _engine.Score(opportunity);
+    public BidScore Score(Opportunity opportunity) =>
+        BidScore.Create(0, ScoreVerdict.NoBid);
 }

@@ -1,0 +1,50 @@
+@page "/verify-email"
+@layout PublicLayout
+@inject Meridian.Application.Auth.AuthService Auth
+
+<PageTitle>Verify email · Meridian</PageTitle>
+
+<section class="auth-card">
+    @if (_status == Status.Pending)
+    {
+        <p>Verifying your email…</p>
+    }
+    else if (_status == Status.Success)
+    {
+        <h1>Email verified</h1>
+        <p>You're all set. <a href="/login">Sign in</a> to continue.</p>
+    }
+    else
+    {
+        <h1>Verification failed</h1>
+        <p>@_error</p>
+        <p class="auth-meta"><a href="/login">Back to sign in</a></p>
+    }
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public string? Token { get; set; }
+
+    private Status _status = Status.Pending;
+    private string _error = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Token))
+        {
+            _status = Status.Failed;
+            _error = "Verification link was missing a token.";
+            return;
+        }
+        var result = await Auth.VerifyEmailAsync(Token, CancellationToken.None);
+        if (result.IsSuccess)
+            _status = Status.Success;
+        else
+        {
+            _status = Status.Failed;
+            _error = result.Error!;
+        }
+    }
+
+    private enum Status { Pending, Success, Failed }
+}
