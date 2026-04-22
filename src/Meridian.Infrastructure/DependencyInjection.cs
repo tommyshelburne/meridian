@@ -3,8 +3,10 @@ using Meridian.Application.Ports;
 using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Auth;
 using Meridian.Infrastructure.Email;
+using Meridian.Application.Ingestion;
 using Meridian.Infrastructure.Ingestion;
 using Meridian.Infrastructure.Ingestion.SamGov;
+using Meridian.Infrastructure.Ingestion.UsaSpending;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Infrastructure.Outreach;
@@ -50,11 +52,19 @@ public static class DependencyInjection
         // SAM.gov
         services.Configure<SamGovOptions>(configuration.GetSection(SamGovOptions.SectionName));
         services.AddHttpClient<SamGovClient>();
-        services.AddTransient<IOpportunitySource, SamGovClient>();
+        services.AddTransient<IOpportunitySourceAdapter, SamGovClient>();
         services.AddHttpClient<SamGovPocEnricher>();
         services.AddTransient<IPocEnricher, SamGovPocEnricher>();
         services.AddHttpClient<SamGovAmendmentMonitor>();
         services.AddTransient<IBidMonitor, SamGovAmendmentMonitor>();
+
+        // USASpending.gov
+        services.Configure<UsaSpendingOptions>(configuration.GetSection(UsaSpendingOptions.SectionName));
+        services.AddHttpClient<UsaSpendingClient>();
+        services.AddTransient<IOpportunitySourceAdapter, UsaSpendingClient>();
+
+        // Ingestion orchestrator
+        services.AddScoped<IngestionOrchestrator>();
 
         // Outreach
         services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();

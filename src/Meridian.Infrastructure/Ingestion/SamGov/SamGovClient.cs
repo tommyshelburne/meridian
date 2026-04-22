@@ -4,19 +4,19 @@ using System.Web;
 using Meridian.Application.Common;
 using Meridian.Application.Ports;
 using Meridian.Domain.Common;
-using Meridian.Domain.Opportunities;
+using Meridian.Domain.Sources;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Meridian.Infrastructure.Ingestion.SamGov;
 
-public class SamGovClient : IOpportunitySource
+public class SamGovClient : IOpportunitySourceAdapter
 {
     private readonly HttpClient _httpClient;
     private readonly SamGovOptions _options;
     private readonly ILogger<SamGovClient> _logger;
 
-    public string SourceName => "SAM.gov";
+    public SourceAdapterType AdapterType => SourceAdapterType.SamGov;
 
     public SamGovClient(HttpClient httpClient, IOptions<SamGovOptions> options, ILogger<SamGovClient> logger)
     {
@@ -25,15 +25,16 @@ public class SamGovClient : IOpportunitySource
         _logger = logger;
     }
 
-    public async Task<ServiceResult<IReadOnlyList<Opportunity>>> FetchOpportunitiesAsync(
-        Guid tenantId, CancellationToken ct)
+    public async Task<ServiceResult<IReadOnlyList<IngestedOpportunity>>> FetchAsync(
+        SourceDefinition source, CancellationToken ct)
     {
-        var allOpportunities = new List<Opportunity>();
+        var parameters = SamGovParameters.Parse(source.ParametersJson, _options);
+        var allOpportunities = new List<IngestedOpportunity>();
         var seenIds = new HashSet<string>();
 
-        foreach (var keyword in _options.Keywords)
+        foreach (var keyword in parameters.Keywords)
         {
-            var keywordResults = await SearchByKeywordAsync(keyword, tenantId, ct);
+            var keywordResults = await SearchByKeywordAsync(keyword, parameters.LookbackDays, ct);
             foreach (var opp in keywordResults)
             {
                 if (seenIds.Add(opp.ExternalId))
@@ -41,16 +42,17 @@ public class SamGovClient : IOpportunitySource
             }
         }
 
-        _logger.LogInformation("SAM.gov fetched {Count} unique opportunities across {Keywords} keywords",
-            allOpportunities.Count, _options.Keywords.Count);
+        _logger.LogInformation("SAM.gov fetched {Count} unique opportunities for source {SourceId} across {Keywords} keywords",
+            allOpportunities.Count, source.Id, parameters.Keywords.Count);
 
-        return ServiceResult<IReadOnlyList<Opportunity>>.Ok(allOpportunities);
+        return ServiceResult<IReadOnlyList<IngestedOpportunity>>.Ok(allOpportunities);
     }
 
-    private async Task<List<Opportunity>> SearchByKeywordAsync(string keyword, Guid tenantId, CancellationToken ct)
+    private async Task<List<IngestedOpportunity>> SearchByKeywordAsync(
+        string keyword, int lookbackDays, CancellationToken ct)
     {
-        var results = new List<Opportunity>();
-        var postedFrom = DateTimeOffset.UtcNow.AddDays(-_options.LookbackDays).ToString("MM/dd/yyyy");
+        var results = new List<IngestedOpportunity>();
+        var postedFrom = DateTimeOffset.UtcNow.AddDays(-lookbackDays).ToString("MM/dd/yyyy");
         var postedTo = DateTimeOffset.UtcNow.ToString("MM/dd/yyyy");
 
         for (var page = 0; page < _options.MaxPages; page++)
@@ -69,7 +71,7 @@ public class SamGovClient : IOpportunitySource
 
                 foreach (var samOpp in searchResult.OpportunitiesData)
                 {
-                    var opp = MapToOpportunity(samOpp, tenantId);
+                    var opp = MapToIngested(samOpp);
                     if (opp is not null)
                         results.Add(opp);
                 }
@@ -96,31 +98,29 @@ public class SamGovClient : IOpportunitySource
                $"&ptype=o,p,k&status=active";
     }
 
-    private static Opportunity? MapToOpportunity(SamGovOpportunity sam, Guid tenantId)
+    private static IngestedOpportunity? MapToIngested(SamGovOpportunity sam)
     {
         if (string.IsNullOrWhiteSpace(sam.NoticeId) || string.IsNullOrWhiteSpace(sam.Title))
             return null;
 
         var agencyName = sam.SubTier ?? sam.Department ?? "Unknown Agency";
         var agencyType = ClassifyAgencyType(sam.Department);
-        var agency = Agency.Create(agencyName, agencyType);
 
-        DateTimeOffset? postedDate = TryParseDate(sam.PostedDate);
-        DateTimeOffset? deadline = TryParseDate(sam.ResponseDeadline);
+        var postedDate = TryParseDate(sam.PostedDate) ?? DateTimeOffset.UtcNow;
+        var deadline = TryParseDate(sam.ResponseDeadline);
 
-        var opp = Opportunity.Create(
-            tenantId,
-            sam.NoticeId,
-            OpportunitySource.SamGov,
-            sam.Title,
-            sam.Description ?? string.Empty,
-            agency,
-            postedDate ?? DateTimeOffset.UtcNow,
-            deadline,
-            sam.NaicsCode,
-            sam.Award?.Amount);
-
-        return opp;
+        return new IngestedOpportunity(
+            ExternalId: sam.NoticeId,
+            Title: sam.Title,
+            Description: sam.Description ?? string.Empty,
+            AgencyName: agencyName,
+            AgencyType: agencyType,
+            AgencyState: null,
+            PostedDate: postedDate,
+            ResponseDeadline: deadline,
+            NaicsCode: sam.NaicsCode,
+            EstimatedValue: sam.Award?.Amount,
+            ProcurementVehicle: null);
     }
 
     private static AgencyType ClassifyAgencyType(string? department)

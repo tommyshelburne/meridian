@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using FluentAssertions;
 using Meridian.Domain.Common;
+using Meridian.Domain.Sources;
 using Meridian.Infrastructure.Ingestion.SamGov;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,14 @@ public class SamGovClientTests
             LookbackDays = 7
         });
         return new SamGovClient(httpClient, options, NullLogger<SamGovClient>.Instance);
+    }
+
+    private static SourceDefinition CreateSource(params string[] keywords)
+    {
+        var paramsJson = keywords.Length == 0
+            ? "{}"
+            : JsonSerializer.Serialize(new { keywords, lookbackDays = 7 });
+        return SourceDefinition.Create(TenantId, SourceAdapterType.SamGov, "SAM.gov", paramsJson);
     }
 
     private static SamGovSearchResponse CreateSearchResponse(params SamGovOpportunity[] opps)
@@ -60,34 +69,23 @@ public class SamGovClientTests
                 NaicsCode = "561422"
             })));
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(CreateSource("contact center"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(1);
         result.Value![0].Title.Should().Be("Contact Center Support Services");
-        result.Value[0].Source.Should().Be(OpportunitySource.SamGov);
         result.Value[0].ExternalId.Should().Be("SAM-001");
+        result.Value[0].AgencyName.Should().Be("VA");
     }
 
     [Fact]
     public async Task Deduplicates_across_keywords()
     {
-        var options = Options.Create(new SamGovOptions
-        {
-            ApiKey = "test-key",
-            BaseUrl = "https://api.sam.gov/opportunities/v2/search",
-            Keywords = new[] { "contact center", "call center" },
-            PageSize = 25,
-            MaxPages = 2,
-            LookbackDays = 7
-        });
-        var client = new SamGovClient(
-            new HttpClient(new FakeHandler(_ => JsonResponse(CreateSearchResponse(
-                new SamGovOpportunity { NoticeId = "SAM-001", Title = "Contact Center Services" })))),
-            options,
-            NullLogger<SamGovClient>.Instance);
+        var client = CreateClient(_ => JsonResponse(CreateSearchResponse(
+            new SamGovOpportunity { NoticeId = "SAM-001", Title = "Contact Center Services" })));
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(
+            CreateSource("contact center", "call center"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(1, "same NoticeId from two keywords should deduplicate");
@@ -105,9 +103,9 @@ public class SamGovClientTests
                 SubTier = "Army"
             })));
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(CreateSource("contact center"), CancellationToken.None);
 
-        result.Value![0].Agency.Type.Should().Be(AgencyType.FederalDefense);
+        result.Value![0].AgencyType.Should().Be(AgencyType.FederalDefense);
     }
 
     [Fact]
@@ -115,7 +113,7 @@ public class SamGovClientTests
     {
         var client = CreateClient(_ => JsonResponse(new SamGovSearchResponse()));
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(CreateSource("contact center"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().BeEmpty();
@@ -126,7 +124,7 @@ public class SamGovClientTests
     {
         var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(CreateSource("contact center"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().BeEmpty();
@@ -139,7 +137,7 @@ public class SamGovClientTests
             new SamGovOpportunity { NoticeId = "", Title = "No ID" },
             new SamGovOpportunity { NoticeId = "SAM-VALID", Title = "Contact Center Services" })));
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(CreateSource("contact center"), CancellationToken.None);
 
         result.Value.Should().HaveCount(1);
         result.Value![0].ExternalId.Should().Be("SAM-VALID");
@@ -172,8 +170,25 @@ public class SamGovClientTests
             };
         });
 
-        var result = await client.FetchOpportunitiesAsync(TenantId, CancellationToken.None);
+        var result = await client.FetchAsync(CreateSource("contact center"), CancellationToken.None);
 
         result.Value.Should().HaveCount(30);
+    }
+
+    [Fact]
+    public async Task Uses_fallback_keywords_when_source_has_empty_parameters()
+    {
+        var callCount = 0;
+        var client = CreateClient(_ =>
+        {
+            callCount++;
+            return JsonResponse(CreateSearchResponse(
+                new SamGovOpportunity { NoticeId = $"SAM-{callCount}", Title = "Fallback result" }));
+        });
+
+        var result = await client.FetchAsync(CreateSource(), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        callCount.Should().Be(1, "fallback keywords from SamGovOptions should be used");
     }
 }

@@ -1,4 +1,3 @@
-using Meridian.Application.Pipeline;
 using Meridian.Infrastructure;
 using Meridian.Worker;
 using Meridian.Worker.Jobs;
@@ -9,9 +8,6 @@ var builder = Host.CreateApplicationBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("Meridian")
     ?? throw new InvalidOperationException("ConnectionStrings:Meridian is required");
 builder.Services.AddMeridianInfrastructure(connectionString, builder.Configuration);
-
-// Application services
-builder.Services.AddScoped<MeridianPipelineService>();
 
 // Worker jobs
 builder.Services.AddSingleton<IMeridianJob, IngestionJob>();
