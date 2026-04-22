@@ -116,6 +116,9 @@ public class SequenceEngineService : ISequenceEngine
                 var sendResult = await _emailSender.SendAsync(message, ct);
                 if (!sendResult.IsSuccess)
                 {
+                    if (sendResult.Error == SuppressionFilterEmailSender.SuppressedError)
+                        enrollment.MarkUnsubscribed();
+
                     _logger.LogWarning("Email send failed for enrollment {EnrollmentId}: {Error}",
                         enrollment.Id, sendResult.Error);
                     continue;
@@ -141,7 +144,6 @@ public class SequenceEngineService : ISequenceEngine
                     enrollment.AdvanceStep(now, totalSteps);
                 }
 
-                _throttle.RecordSend();
                 sent++;
 
                 await _auditLog.AppendAsync(AuditEvent.Record(

@@ -16,6 +16,8 @@ using Meridian.Infrastructure.Scoring;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Meridian.Infrastructure;
 
@@ -84,6 +86,8 @@ public static class DependencyInjection
         // Outreach
         services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();
         services.AddSingleton<SendThrottleState>();
+        services.Configure<SendThrottleOptions>(configuration.GetSection(SendThrottleOptions.SectionName));
+        services.Configure<EmailComplianceOptions>(configuration.GetSection(EmailComplianceOptions.SectionName));
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
 
         // Auth services
@@ -100,8 +104,24 @@ public static class DependencyInjection
         services.AddScoped<MembershipService>();
         services.AddScoped<TenantManagementService>();
 
-        // Email
-        services.AddSingleton<IEmailSender, ConsoleEmailSender>();
+        // Email — decorator chain: Suppression -> Throttle -> ComplianceFooter -> base sender.
+        // Scoped because the suppression filter depends on per-request tenant context + repo.
+        services.AddSingleton<ConsoleEmailSender>();
+        services.AddScoped<IEmailSender>(sp =>
+        {
+            IEmailSender chain = sp.GetRequiredService<ConsoleEmailSender>();
+            chain = new ComplianceFooterEmailSender(chain,
+                sp.GetRequiredService<IOptions<EmailComplianceOptions>>());
+            chain = new ThrottledEmailSender(chain,
+                sp.GetRequiredService<SendThrottleState>(),
+                sp.GetRequiredService<IOptions<SendThrottleOptions>>(),
+                sp.GetRequiredService<ILogger<ThrottledEmailSender>>());
+            chain = new SuppressionFilterEmailSender(chain,
+                sp.GetRequiredService<IOutreachRepository>(),
+                sp.GetRequiredService<ITenantContext>(),
+                sp.GetRequiredService<ILogger<SuppressionFilterEmailSender>>());
+            return chain;
+        });
 
         return services;
     }
