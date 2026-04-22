@@ -1,0 +1,103 @@
+@page "/app/{Slug}/sources/new/webhook"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+
+<PageTitle>Add webhook source · Meridian</PageTitle>
+
+<a class="back-link" href="/app/@Slug/sources">← Back to sources</a>
+<h1>Add inbound webhook source</h1>
+<p class="subtitle">Receive opportunities via HTTP POST. We'll generate a secret and give you the endpoint URL after creation.</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+
+<form method="post" action="/app/@Slug/sources/new/webhook" class="wizard-form">
+    <fieldset>
+        <legend>Basics</legend>
+        <label>Source name
+            <input type="text" name="Name" required placeholder="Partner A webhook" />
+        </label>
+        <label>Secret (leave blank to auto-generate)
+            <input type="text" name="Secret" placeholder="auto-generated 48-char hex" />
+            <small>Senders must include this as the <code>X-Meridian-Secret</code> header.</small>
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Agency context</legend>
+        <label>Agency name
+            <input type="text" name="AgencyName" required placeholder="Partner Source" />
+        </label>
+        <label>State code (optional)
+            <input type="text" name="AgencyState" maxlength="2" placeholder="TX" />
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" name="IsDefense" />
+            <span>Defense / military source</span>
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Field mapping</legend>
+        <p class="hint">JSON paths in the payload to pull each field from.</p>
+        <div class="row">
+            <label>External ID *
+                <input type="text" name="MapExternalId" required placeholder="id" />
+            </label>
+            <label>Title *
+                <input type="text" name="MapTitle" required placeholder="title" />
+            </label>
+        </div>
+        <div class="row">
+            <label>Description
+                <input type="text" name="MapDescription" placeholder="description" />
+            </label>
+            <label>Posted date
+                <input type="text" name="MapPostedDate" placeholder="posted_at" />
+            </label>
+        </div>
+        <div class="row">
+            <label>Response deadline
+                <input type="text" name="MapResponseDeadline" placeholder="close_at" />
+            </label>
+            <label>NAICS code
+                <input type="text" name="MapNaicsCode" placeholder="naics" />
+            </label>
+        </div>
+        <label>Estimated value
+            <input type="text" name="MapEstimatedValue" placeholder="amount" />
+        </label>
+    </fieldset>
+
+    <div class="actions">
+        <a href="/app/@Slug/sources" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary">Create webhook source</button>
+    </div>
+</form>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+}
+
+<style>
+    .back-link { display: inline-block; color: #2a3552; text-decoration: none; margin-bottom: 0.5rem; font-size: 0.875rem; }
+    .back-link:hover { text-decoration: underline; }
+    .subtitle { color: #6a6e82; margin-top: -0.5rem; margin-bottom: 1.5rem; }
+    .wizard-form { max-width: 40rem; display: flex; flex-direction: column; gap: 1rem; }
+    .wizard-form fieldset { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .wizard-form legend { padding: 0 0.5rem; font-weight: 600; color: #2a3552; }
+    .wizard-form label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .wizard-form label.checkbox { flex-direction: row; align-items: center; gap: 0.5rem; }
+    .wizard-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+    .wizard-form input { padding: 0.55rem 0.75rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 0.95rem; font-family: inherit; }
+    .wizard-form small { color: #6a6e82; font-size: 0.8rem; }
+    .wizard-form small code, .hint code { background: #f1f3f9; padding: 0 0.25rem; border-radius: 3px; }
+    .hint { color: #6a6e82; font-size: 0.85rem; margin: 0; }
+    .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .btn-primary { padding: 0.6rem 1.25rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-secondary { padding: 0.6rem 1.25rem; background: white; color: #2a3552; border: 1px solid #cfd3e0; border-radius: 6px; font-weight: 600; text-decoration: none; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; max-width: 40rem; }
+</style>

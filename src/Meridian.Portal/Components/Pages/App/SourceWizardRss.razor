@@ -1,0 +1,89 @@
+@page "/app/{Slug}/sources/new/rss"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+
+<PageTitle>Add RSS feed · Meridian</PageTitle>
+
+<a class="back-link" href="/app/@Slug/sources">← Back to sources</a>
+<h1>Add RSS / Atom feed</h1>
+<p class="subtitle">Any public RSS or Atom feed. We'll poll it on the schedule you set.</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+
+<form method="post" action="/app/@Slug/sources/new/rss" class="wizard-form">
+    <fieldset>
+        <legend>Basics</legend>
+        <label>Source name
+            <input type="text" name="Name" required placeholder="State of Texas bids" />
+        </label>
+        <label>Feed URL
+            <input type="url" name="FeedUrl" required placeholder="https://example.gov/bids.rss" />
+            <small>The full URL of the RSS or Atom feed.</small>
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Agency context</legend>
+        <label>Agency name
+            <input type="text" name="AgencyName" required placeholder="Texas DIR" />
+        </label>
+        <label>State code (optional)
+            <input type="text" name="AgencyState" maxlength="2" placeholder="TX" />
+            <small>Two-letter state code. Leave blank for federal sources.</small>
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" name="IsDefense" />
+            <span>Defense / military source</span>
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Filtering (optional)</legend>
+        <label>Include keywords
+            <input type="text" name="IncludeKeywords" placeholder="cybersecurity, cloud, software" />
+            <small>Comma-separated. Items must match at least one keyword.</small>
+        </label>
+        <label>Exclude keywords
+            <input type="text" name="ExcludeKeywords" placeholder="janitorial, catering" />
+            <small>Comma-separated. Items matching any of these will be skipped.</small>
+        </label>
+    </fieldset>
+
+    <fieldset>
+        <legend>Schedule</legend>
+        <label>Cron expression (optional)
+            <input type="text" name="Schedule" placeholder="0 */6 * * *" />
+            <small>Leave blank to run on the default ingestion cycle.</small>
+        </label>
+    </fieldset>
+
+    <div class="actions">
+        <a href="/app/@Slug/sources" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary">Add RSS source</button>
+    </div>
+</form>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+}
+
+<style>
+    .back-link { display: inline-block; color: #2a3552; text-decoration: none; margin-bottom: 0.5rem; font-size: 0.875rem; }
+    .back-link:hover { text-decoration: underline; }
+    .subtitle { color: #6a6e82; margin-top: -0.5rem; margin-bottom: 1.5rem; }
+    .wizard-form { max-width: 36rem; display: flex; flex-direction: column; gap: 1rem; }
+    .wizard-form fieldset { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .wizard-form legend { padding: 0 0.5rem; font-weight: 600; color: #2a3552; }
+    .wizard-form label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .wizard-form label.checkbox { flex-direction: row; align-items: center; gap: 0.5rem; }
+    .wizard-form input[type=text], .wizard-form input[type=url] { padding: 0.55rem 0.75rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 0.95rem; }
+    .wizard-form small { color: #6a6e82; font-size: 0.8rem; }
+    .actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .btn-primary { padding: 0.6rem 1.25rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-secondary { padding: 0.6rem 1.25rem; background: white; color: #2a3552; border: 1px solid #cfd3e0; border-radius: 6px; font-weight: 600; text-decoration: none; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; max-width: 36rem; }
+</style>

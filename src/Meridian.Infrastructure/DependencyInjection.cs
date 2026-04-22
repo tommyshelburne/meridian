@@ -4,6 +4,7 @@ using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Auth;
 using Meridian.Infrastructure.Email;
 using Meridian.Application.Ingestion;
+using Meridian.Application.Sources;
 using Meridian.Infrastructure.Ingestion;
 using Meridian.Infrastructure.Ingestion.Generic;
 using Meridian.Infrastructure.Ingestion.SamGov;
@@ -74,6 +75,7 @@ public static class DependencyInjection
 
         // Ingestion orchestrator
         services.AddScoped<IngestionOrchestrator>();
+        services.AddScoped<SourceManagementService>();
 
         // Outreach
         services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();

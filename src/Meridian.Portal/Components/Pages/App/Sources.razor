@@ -1,0 +1,212 @@
+@page "/app/{Slug}/sources"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Domain.Sources
+
+<PageTitle>Sources · Meridian</PageTitle>
+
+<h1>Data sources</h1>
+<p class="subtitle">Add and configure where Meridian pulls opportunities from.</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (!string.IsNullOrEmpty(Created))
+{
+    <div class="auth-ok" role="status">
+        Source created.
+        @if (!string.IsNullOrEmpty(WebhookSecret) && !string.IsNullOrEmpty(WebhookSourceId))
+        {
+            <div class="webhook-details">
+                <strong>Webhook endpoint</strong>
+                <code>POST /api/webhooks/ingest/@WebhookSourceId</code>
+                <strong>Secret (save this — it won't be shown again)</strong>
+                <code>@WebhookSecret</code>
+                <small>Senders must include <code>X-Meridian-Secret: @WebhookSecret</code> header.</small>
+            </div>
+        }
+    </div>
+}
+@if (!string.IsNullOrEmpty(Updated))
+{
+    <div class="auth-ok" role="status">Source updated.</div>
+}
+
+<section class="my-sources">
+    <h2>My sources</h2>
+    @if (_sources.Count == 0)
+    {
+        <p class="empty">No sources configured yet. Add one from the marketplace below.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th><th>Type</th><th>Status</th><th>Last run</th><th>Failures</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in _sources)
+                {
+                    <tr>
+                        <td>@s.Name</td>
+                        <td>@s.AdapterType</td>
+                        <td>
+                            <span class="badge badge-@(s.IsEnabled ? "enabled" : "disabled")">
+                                @(s.IsEnabled ? "Enabled" : "Disabled")
+                            </span>
+                            <span class="run-status">@s.LastRunStatus</span>
+                        </td>
+                        <td>@(s.LastRunAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                        <td>@s.ConsecutiveFailures</td>
+                        <td class="row-actions">
+                            @if (s.IsEnabled)
+                            {
+                                <form method="post" action="/app/@Slug/sources/@s.Id/disable" class="inline">
+                                    <button type="submit" class="link-danger">Disable</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" action="/app/@Slug/sources/@s.Id/enable" class="inline">
+                                    <button type="submit" class="link-primary">Enable</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                    @if (!string.IsNullOrEmpty(s.LastRunError))
+                    {
+                        <tr class="error-row">
+                            <td colspan="6" class="error-detail">⚠ @s.LastRunError</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+<AuthorizeView Roles="Owner,Admin">
+    <Authorized>
+        <section class="marketplace">
+            <h2>Source marketplace</h2>
+            <div class="adapter-grid">
+                @foreach (var adapter in Adapters)
+                {
+                    <div class="adapter-card">
+                        <div class="card-head">
+                            <h3>@adapter.Title</h3>
+                            <span class="tier tier-@adapter.Tier.ToLowerInvariant().Replace("-", "")">@adapter.Tier</span>
+                        </div>
+                        <p>@adapter.Description</p>
+                        @if (adapter.WizardPath is not null)
+                        {
+                            <a class="card-cta" href="/app/@Slug/sources/new/@adapter.WizardPath">Configure →</a>
+                        }
+                        else
+                        {
+                            <form method="post" action="/app/@Slug/sources/create">
+                                <input type="hidden" name="AdapterType" value="@adapter.Type" />
+                                <label>Name <input type="text" name="Name" placeholder="@adapter.NamePlaceholder" required /></label>
+                                <label>Parameters (JSON)
+                                    <textarea name="ParametersJson" rows="4" spellcheck="false">@adapter.SampleParams</textarea>
+                                </label>
+                                <label>Schedule (cron, optional) <input type="text" name="Schedule" placeholder="0 */6 * * *" /></label>
+                                <button type="submit">Add source</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Created { get; set; }
+    [SupplyParameterFromQuery] public string? Updated { get; set; }
+    [SupplyParameterFromQuery] public string? WebhookSecret { get; set; }
+    [SupplyParameterFromQuery] public string? WebhookSourceId { get; set; }
+
+    [Inject] private Meridian.Application.Sources.SourceManagementService SourceMgmt { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<SourceDefinition> _sources = Array.Empty<SourceDefinition>();
+
+    private record AdapterDescriptor(
+        SourceAdapterType Type, string Title, string Description,
+        string Tier, string NamePlaceholder, string SampleParams,
+        string? WizardPath = null);
+
+    private static readonly IReadOnlyList<AdapterDescriptor> Adapters = new AdapterDescriptor[]
+    {
+        new(SourceAdapterType.SamGov, "SAM.gov", "Federal contract opportunities from the official SAM.gov API.",
+            "Built-in", "SAM.gov — IT services",
+            "{\n  \"keywords\": [\"cybersecurity\", \"cloud\"],\n  \"lookbackDays\": 7\n}"),
+        new(SourceAdapterType.UsaSpending, "USASpending.gov", "Historical federal award data from USASpending.gov.",
+            "Built-in", "USASpending — NAICS 541512",
+            "{\n  \"naicsCodes\": [\"541512\"],\n  \"keywords\": [],\n  \"minAwardAmount\": 100000,\n  \"lookbackDays\": 30\n}"),
+        new(SourceAdapterType.GenericRss, "RSS / Atom feed", "Any agency RSS or Atom feed (state portals, bid boards, etc.).",
+            "Generic", "", "", WizardPath: "rss"),
+        new(SourceAdapterType.GenericRest, "Custom REST API", "Point at any JSON REST endpoint with field mapping.",
+            "Generic", "", "", WizardPath: "rest"),
+        new(SourceAdapterType.InboundWebhook, "Inbound webhook", "Receive opportunities via HTTP POST from external systems.",
+            "Generic", "", "", WizardPath: "webhook")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _sources = await SourceMgmt.ListForTenantAsync(tenantId, CancellationToken.None);
+    }
+}
+
+<style>
+    .subtitle { color: #6a6e82; margin-top: -0.5rem; margin-bottom: 1.5rem; }
+    .my-sources { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
+    .my-sources h2 { margin: 0 0 1rem; font-size: 1rem; }
+    .my-sources table { width: 100%; border-collapse: collapse; }
+    .my-sources th, .my-sources td { padding: 0.6rem 0.75rem; text-align: left; font-size: 0.9rem; border-bottom: 1px solid #eef0f6; }
+    .my-sources th { color: #6a6e82; font-weight: 600; background: #fafbff; }
+    .empty { color: #6a6e82; font-style: italic; margin: 0; }
+    .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-enabled { background: #e0f3e6; color: #1e6a32; }
+    .badge-disabled { background: #f5e6e6; color: #8a2020; }
+    .run-status { margin-left: 0.5rem; color: #6a6e82; font-size: 0.8rem; }
+    .row-actions { text-align: right; }
+    .inline { display: inline; margin: 0; }
+    .link-danger { background: none; border: none; color: #b43a3a; cursor: pointer; padding: 0; font: inherit; }
+    .link-danger:hover { text-decoration: underline; }
+    .link-primary { background: none; border: none; color: #2a3552; cursor: pointer; padding: 0; font: inherit; font-weight: 600; }
+    .link-primary:hover { text-decoration: underline; }
+    .error-row td { background: #fdf4f4; }
+    .error-detail { color: #8a1717; font-size: 0.8rem; padding: 0.5rem 0.75rem; }
+
+    .marketplace h2 { margin: 0 0 1rem; font-size: 1rem; }
+    .adapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr)); gap: 1rem; }
+    .adapter-card { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .adapter-card .card-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .adapter-card h3 { margin: 0; font-size: 1rem; }
+    .adapter-card p { margin: 0; color: #6a6e82; font-size: 0.875rem; }
+    .card-cta { margin-top: 0.75rem; padding: 0.5rem 0.9rem; background: #2a3552; color: white; border-radius: 6px; font-weight: 600; text-decoration: none; text-align: center; align-self: flex-start; font-size: 0.875rem; }
+    .card-cta:hover { background: #1f2844; }
+    .tier { padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+    .tier-builtin { background: #e7edff; color: #2a3552; }
+    .tier-generic { background: #fff1e0; color: #8a5a17; }
+    .webhook-details { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.75rem; background: #fafbff; border-radius: 6px; font-size: 0.85rem; }
+    .webhook-details code { background: white; border: 1px solid #cfd3e0; padding: 0.25rem 0.5rem; border-radius: 4px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; word-break: break-all; }
+    .adapter-card form { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
+    .adapter-card label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: #4a4e60; }
+    .adapter-card input, .adapter-card textarea { padding: 0.45rem 0.6rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 0.85rem; font-family: inherit; }
+    .adapter-card textarea { font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; }
+    .adapter-card button { padding: 0.5rem 0.9rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+</style>
