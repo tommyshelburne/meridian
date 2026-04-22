@@ -6,5 +6,7 @@ public enum OpportunitySource
     U3P,
     StatePortal,
     Cooperative,
-    Manual
+    Manual,
+    UsaSpending,
+    Other
 }

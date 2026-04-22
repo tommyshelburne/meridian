@@ -13,6 +13,7 @@ public class OpportunityConfiguration : IEntityTypeConfiguration<Opportunity>
         builder.HasKey(o => o.Id);
         builder.Property(o => o.Id).HasColumnName("id");
         builder.Property(o => o.TenantId).HasColumnName("tenant_id").IsRequired();
+        builder.Property(o => o.SourceDefinitionId).HasColumnName("source_definition_id");
         builder.Property(o => o.ExternalId).HasColumnName("external_id").HasMaxLength(500).IsRequired();
         builder.Property(o => o.Source).HasColumnName("source").HasConversion<string>().HasMaxLength(50);
         builder.Property(o => o.Title).HasColumnName("title").HasMaxLength(1000).IsRequired();
@@ -44,7 +45,7 @@ public class OpportunityConfiguration : IEntityTypeConfiguration<Opportunity>
             .WithOne()
             .HasForeignKey(c => c.OpportunityId);
 
-        builder.HasIndex(o => new { o.TenantId, o.ExternalId }).IsUnique();
+        builder.HasIndex(o => new { o.TenantId, o.SourceDefinitionId, o.ExternalId }).IsUnique();
         builder.HasIndex(o => new { o.TenantId, o.Status });
         builder.HasIndex(o => new { o.TenantId, o.WatchedSince }).HasFilter("watched_since IS NOT NULL");
     }

@@ -17,6 +17,11 @@ public class OpportunityRepository : IOpportunityRepository
     public async Task<Opportunity?> GetByExternalIdAsync(Guid tenantId, string externalId, CancellationToken ct)
         => await _db.Opportunities.FirstOrDefaultAsync(o => o.ExternalId == externalId, ct);
 
+    public async Task<Opportunity?> GetBySourceExternalIdAsync(
+        Guid tenantId, Guid sourceDefinitionId, string externalId, CancellationToken ct)
+        => await _db.Opportunities.FirstOrDefaultAsync(
+            o => o.SourceDefinitionId == sourceDefinitionId && o.ExternalId == externalId, ct);
+
     public async Task<IReadOnlyList<Opportunity>> GetByStatusAsync(Guid tenantId, OpportunityStatus status, CancellationToken ct)
         => await _db.Opportunities.Where(o => o.Status == status).ToListAsync(ct);
 

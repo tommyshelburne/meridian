@@ -3,6 +3,7 @@ using Meridian.Application.Ports;
 using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Auth;
 using Meridian.Infrastructure.Email;
+using Meridian.Infrastructure.Ingestion;
 using Meridian.Infrastructure.Ingestion.SamGov;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
@@ -38,9 +39,13 @@ public static class DependencyInjection
         services.AddScoped<IUserTenantRepository, UserTenantRepository>();
         services.AddScoped<IAuthTokenRepository, AuthTokenRepository>();
         services.AddScoped<IOidcConfigRepository, OidcConfigRepository>();
+        services.AddScoped<ISourceDefinitionRepository, SourceDefinitionRepository>();
 
         // Scoring — rule-based engine arrives in Phase 4; this is a placeholder
         services.AddSingleton<IScoringEngine, ScoringEngineAdapter>();
+
+        // Adapter factory — adapters register themselves as IOpportunitySourceAdapter
+        services.AddTransient<ISourceAdapterFactory, SourceAdapterFactory>();
 
         // SAM.gov
         services.Configure<SamGovOptions>(configuration.GetSection(SamGovOptions.SectionName));

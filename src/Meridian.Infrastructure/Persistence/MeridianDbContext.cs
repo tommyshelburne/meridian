@@ -4,6 +4,7 @@ using Meridian.Domain.Contacts;
 using Meridian.Domain.Memory;
 using Meridian.Domain.Opportunities;
 using Meridian.Domain.Outreach;
+using Meridian.Domain.Sources;
 using Meridian.Domain.Tenants;
 using Meridian.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,7 @@ public class MeridianDbContext : DbContext
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<OidcConfig> OidcConfigs => Set<OidcConfig>();
+    public DbSet<SourceDefinition> SourceDefinitions => Set<SourceDefinition>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -60,5 +62,6 @@ public class MeridianDbContext : DbContext
         modelBuilder.Entity<AuditEvent>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<RagMemory>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<SuppressionEntry>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
+        modelBuilder.Entity<SourceDefinition>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
     }
 }

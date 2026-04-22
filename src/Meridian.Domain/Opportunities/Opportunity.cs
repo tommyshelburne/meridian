@@ -7,6 +7,7 @@ public class Opportunity
 {
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }
+    public Guid? SourceDefinitionId { get; private set; }
     public string ExternalId { get; private set; } = null!;
     public OpportunitySource Source { get; private set; }
     public string Title { get; private set; } = null!;
@@ -38,7 +39,8 @@ public class Opportunity
         DateTimeOffset? responseDeadline = null,
         string? naicsCode = null,
         decimal? estimatedValue = null,
-        ProcurementVehicle? procurementVehicle = null)
+        ProcurementVehicle? procurementVehicle = null,
+        Guid? sourceDefinitionId = null)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("Opportunity title is required.", nameof(title));
@@ -47,6 +49,7 @@ public class Opportunity
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
+            SourceDefinitionId = sourceDefinitionId,
             ExternalId = externalId,
             Source = source,
             Title = title,
