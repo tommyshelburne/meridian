@@ -62,5 +62,23 @@ public class OutreachRepository : IOutreachRepository
     public async Task AddEmailActivityAsync(EmailActivity activity, CancellationToken ct)
         => await _db.EmailActivities.AddAsync(activity, ct);
 
+    public async Task<bool> IsSuppressedAsync(Guid tenantId, string email, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return false;
+
+        var normalized = email.Trim().ToLowerInvariant();
+        var atIdx = normalized.IndexOf('@');
+        var domain = atIdx > 0 && atIdx < normalized.Length - 1
+            ? normalized[(atIdx + 1)..]
+            : null;
+
+        return await _db.SuppressionEntries.AnyAsync(e =>
+            (e.Type == SuppressionType.Email && e.Value == normalized)
+            || (e.Type == SuppressionType.Domain && domain != null && e.Value == domain), ct);
+    }
+
+    public async Task AddSuppressionAsync(SuppressionEntry entry, CancellationToken ct)
+        => await _db.SuppressionEntries.AddAsync(entry, ct);
+
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 }

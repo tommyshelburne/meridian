@@ -25,5 +25,8 @@ public interface IOutreachRepository
     Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid tenantId, string normalizedSubject, Guid contactId, CancellationToken ct);
     Task AddEmailActivityAsync(EmailActivity activity, CancellationToken ct);
 
+    Task<bool> IsSuppressedAsync(Guid tenantId, string email, CancellationToken ct);
+    Task AddSuppressionAsync(SuppressionEntry entry, CancellationToken ct);
+
     Task SaveChangesAsync(CancellationToken ct);
 }
