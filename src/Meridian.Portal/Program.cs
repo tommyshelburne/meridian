@@ -1,6 +1,7 @@
 using Meridian.Infrastructure;
 using Meridian.Portal.Auth;
 using Meridian.Portal.Components;
+using Meridian.Portal.Ingestion;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +47,7 @@ app.UseMiddleware<TenantClaimMiddleware>();
 
 app.MapAuthEndpoints();
 app.MapWorkspaceEndpoints();
+app.MapWebhookIngestEndpoints();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

@@ -5,6 +5,7 @@ using Meridian.Infrastructure.Auth;
 using Meridian.Infrastructure.Email;
 using Meridian.Application.Ingestion;
 using Meridian.Infrastructure.Ingestion;
+using Meridian.Infrastructure.Ingestion.Generic;
 using Meridian.Infrastructure.Ingestion.SamGov;
 using Meridian.Infrastructure.Ingestion.UsaSpending;
 using Meridian.Infrastructure.Persistence;
@@ -62,6 +63,14 @@ public static class DependencyInjection
         services.Configure<UsaSpendingOptions>(configuration.GetSection(UsaSpendingOptions.SectionName));
         services.AddHttpClient<UsaSpendingClient>();
         services.AddTransient<IOpportunitySourceAdapter, UsaSpendingClient>();
+
+        // Generic adapters (tenant-configurable)
+        services.AddHttpClient<GenericRssAdapter>();
+        services.AddTransient<IOpportunitySourceAdapter, GenericRssAdapter>();
+        services.AddHttpClient<GenericRestAdapter>();
+        services.AddTransient<IOpportunitySourceAdapter, GenericRestAdapter>();
+        services.AddSingleton<IWebhookIngestQueue, InMemoryWebhookIngestQueue>();
+        services.AddTransient<IOpportunitySourceAdapter, InboundWebhookAdapter>();
 
         // Ingestion orchestrator
         services.AddScoped<IngestionOrchestrator>();
