@@ -19,6 +19,8 @@ public class Opportunity
     public string? NaicsCode { get; private set; }
     public ProcurementVehicle? ProcurementVehicle { get; private set; }
     public BidScore? Score { get; private set; }
+    public int? EstimatedSeats { get; private set; }
+    public SeatEstimateConfidence SeatEstimateConfidence { get; private set; } = SeatEstimateConfidence.Unknown;
     public OpportunityStatus Status { get; private set; }
     public DateTimeOffset? WatchedSince { get; private set; }
     public DateTimeOffset? LastAmendedAt { get; private set; }
@@ -74,6 +76,13 @@ public class Opportunity
             ScoreVerdict.NoBid => OpportunityStatus.NoBid,
             _ => OpportunityStatus.Scored
         };
+    }
+
+    public void SetSeatEstimate(SeatEstimate estimate)
+    {
+        ArgumentNullException.ThrowIfNull(estimate);
+        EstimatedSeats = estimate.EstimatedSeats;
+        SeatEstimateConfidence = estimate.Confidence;
     }
 
     public void Watch()
