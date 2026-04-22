@@ -70,6 +70,8 @@ public static class DependencyInjection
         services.Configure<UsaSpendingOptions>(configuration.GetSection(UsaSpendingOptions.SectionName));
         services.AddHttpClient<UsaSpendingClient>();
         services.AddTransient<IOpportunitySourceAdapter, UsaSpendingClient>();
+        services.AddHttpClient<UsaSpendingPocEnricher>();
+        services.AddTransient<IPocEnricher, UsaSpendingPocEnricher>();
 
         // Generic adapters (tenant-configurable)
         services.AddHttpClient<GenericRssAdapter>();
