@@ -45,8 +45,12 @@ public static class DependencyInjection
         services.AddScoped<IOidcConfigRepository, OidcConfigRepository>();
         services.AddScoped<ISourceDefinitionRepository, SourceDefinitionRepository>();
 
-        // Scoring — rule-based engine arrives in Phase 4; this is a placeholder
-        services.AddSingleton<IScoringEngine, ScoringEngineAdapter>();
+        // Scoring — v2 rule-based engine
+        var scoringConfig = new ScoringConfiguration();
+        configuration.GetSection(ScoringConfiguration.SectionName).Bind(scoringConfig);
+        services.AddSingleton(scoringConfig);
+        services.AddSingleton<SeatCountEstimator>();
+        services.AddSingleton<IScoringEngine, BidScoringEngine>();
 
         // Adapter factory — adapters register themselves as IOpportunitySourceAdapter
         services.AddTransient<ISourceAdapterFactory, SourceAdapterFactory>();

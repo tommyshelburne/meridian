@@ -26,6 +26,9 @@ public class OpportunityConfiguration : IEntityTypeConfiguration<Opportunity>
         builder.Property(o => o.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(30);
         builder.Property(o => o.WatchedSince).HasColumnName("watched_since");
         builder.Property(o => o.LastAmendedAt).HasColumnName("last_amended_at");
+        builder.Property(o => o.EstimatedSeats).HasColumnName("estimated_seats");
+        builder.Property(o => o.SeatEstimateConfidence).HasColumnName("seat_estimate_confidence")
+            .HasConversion<string>().HasMaxLength(20);
 
         builder.OwnsOne(o => o.Agency, a =>
         {
@@ -39,6 +42,19 @@ public class OpportunityConfiguration : IEntityTypeConfiguration<Opportunity>
             s.Property(x => x.Total).HasColumnName("score_total");
             s.Property(x => x.Verdict).HasColumnName("score_verdict").HasConversion<string>().HasMaxLength(20);
             s.Property(x => x.ScoredAt).HasColumnName("scored_at");
+            s.Property(x => x.RecompeteDetected).HasColumnName("score_recompete_detected");
+
+            s.OwnsOne(x => x.Breakdown, b =>
+            {
+                b.Property(p => p.LaneTitle).HasColumnName("score_lane_title");
+                b.Property(p => p.LaneDescription).HasColumnName("score_lane_description");
+                b.Property(p => p.AgencyTier).HasColumnName("score_agency_tier");
+                b.Property(p => p.WinThemes).HasColumnName("score_win_themes");
+                b.Property(p => p.PastPerformance).HasColumnName("score_past_performance");
+                b.Property(p => p.ProcurementVehicle).HasColumnName("score_procurement_vehicle");
+                b.Property(p => p.SeatCount).HasColumnName("score_seat_count");
+                b.Property(p => p.Recompete).HasColumnName("score_recompete");
+            });
         });
 
         builder.HasMany(o => o.Contacts)

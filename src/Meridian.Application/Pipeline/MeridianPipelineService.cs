@@ -70,12 +70,22 @@ public class MeridianPipelineService
             summary.Ingested++;
 
             // 3. Score
-            var score = _scoringEngine.Score(opp);
-            opp.ApplyScore(score);
+            var scoringResult = _scoringEngine.Score(opp);
+            opp.SetSeatEstimate(scoringResult.SeatEstimate);
+            opp.ApplyScore(scoringResult.Score);
+            var score = scoringResult.Score;
 
             await _auditLog.AppendAsync(AuditEvent.Record(
                 tenantId, "Opportunity", opp.Id, "OpportunityScored", "system",
-                JsonSerializer.Serialize(new { opp.Title, score.Total, score.Verdict })), ct);
+                JsonSerializer.Serialize(new
+                {
+                    opp.Title,
+                    score.Total,
+                    score.Verdict,
+                    Breakdown = score.Breakdown,
+                    SeatEstimate = scoringResult.SeatEstimate,
+                    score.RecompeteDetected
+                })), ct);
 
             if (score.Verdict == ScoreVerdict.NoBid)
             {

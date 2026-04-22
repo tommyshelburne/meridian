@@ -5,5 +5,5 @@ namespace Meridian.Application.Ports;
 
 public interface IScoringEngine
 {
-    BidScore Score(Opportunity opportunity);
+    ScoringResult Score(Opportunity opportunity);
 }
