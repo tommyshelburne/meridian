@@ -97,4 +97,17 @@ public class OutboundConfigurationTests
         config.Enable();
         config.IsEnabled.Should().BeTrue();
     }
+
+    [Fact]
+    public void Webhook_secret_is_optional_and_clears_on_blank_value()
+    {
+        var config = Valid();
+        config.EncryptedWebhookSecret.Should().BeNull();
+
+        config.SetWebhookSecret("encrypted-whsec");
+        config.EncryptedWebhookSecret.Should().Be("encrypted-whsec");
+
+        config.SetWebhookSecret("");
+        config.EncryptedWebhookSecret.Should().BeNull();
+    }
 }

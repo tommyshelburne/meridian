@@ -13,6 +13,7 @@ public class OutboundConfiguration
     public string? ReplyToAddress { get; private set; }
     public string PhysicalAddress { get; private set; } = string.Empty;
     public string UnsubscribeBaseUrl { get; private set; } = string.Empty;
+    public string? EncryptedWebhookSecret { get; private set; }
     public bool IsEnabled { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -65,6 +66,12 @@ public class OutboundConfiguration
 
         ProviderType = providerType;
         EncryptedApiKey = encryptedApiKey ?? string.Empty;
+        Touch();
+    }
+
+    public void SetWebhookSecret(string? encryptedSecret)
+    {
+        EncryptedWebhookSecret = string.IsNullOrWhiteSpace(encryptedSecret) ? null : encryptedSecret;
         Touch();
     }
 
