@@ -1,0 +1,23 @@
+.lead { color: #6a6e82; margin-top: -0.5rem; margin-bottom: 1.5rem; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem 1.5rem; }
+.stat-card.primary { background: linear-gradient(135deg, #2a3552 0%, #4b6bfb 100%); border-color: #2a3552; color: white; }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; }
+.stat-card.primary .stat-label { color: rgba(255,255,255,0.85); }
+.stat-card:not(.primary) .stat-label { color: #6a6e82; }
+.stat-value { font-size: 2.4rem; font-weight: 700; line-height: 1; margin: 0.4rem 0 0.3rem; font-variant-numeric: tabular-nums; }
+.stat-value.muted { color: #9ba0b6; }
+.stat-sub { font-size: 0.78rem; color: #6a6e82; }
+.stat-link { display: inline-block; margin-top: 0.4rem; font-size: 0.85rem; color: white; opacity: 0.95; text-decoration: none; font-weight: 600; }
+.stat-link:hover { text-decoration: underline; }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+.card { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem 1.5rem; }
+.card-warn { border-color: #d6a93d; border-left-width: 3px; background: #fffaf0; }
+.card-ok { border-left: 3px solid #2a8a3e; }
+.card h2 { margin: 0 0 0.5rem; font-size: 1rem; color: #1a1c2d; }
+.card p { margin: 0.3rem 0; color: #555; font-size: 0.9rem; }
+.card .card-meta { margin-top: 0.75rem; font-size: 0.85rem; }
+.card a { color: #4b6bfb; text-decoration: none; font-weight: 600; }
+.card a:hover { text-decoration: underline; }

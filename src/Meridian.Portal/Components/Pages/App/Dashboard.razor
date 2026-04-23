@@ -1,26 +1,74 @@
 @page "/app/{Slug}"
 @layout AppLayout
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@inject Meridian.Application.Auth.TenantManagementService TenantMgmt
-@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState
+@using Meridian.Application.Auth
+@using Meridian.Application.Opportunities
+@using Meridian.Application.Outreach
+@using Meridian.Application.Ports
+@using Meridian.Domain.Common
+@using Microsoft.AspNetCore.Components.Authorization
+@inject TenantManagementService TenantMgmt
+@inject OpportunityQueueService Queue
+@inject IOpportunityRepository OppRepo
+@inject ISourceDefinitionRepository SourceRepo
+@inject OutboundConfigurationService OutboundService
+@inject AuthenticationStateProvider AuthState
 
-<PageTitle>Dashboard · Meridian</PageTitle>
+<PageTitle>@(_tenantName ?? "Workspace") · Meridian</PageTitle>
 
 <h1>@(_tenantName ?? "Workspace")</h1>
 <p class="lead">Welcome back, @_firstName.</p>
 
+<section class="stat-grid">
+    <article class="stat-card primary">
+        <div class="stat-label">Awaiting decision</div>
+        <div class="stat-value">@_queueCount</div>
+        <a class="stat-link" href="/app/@Slug/opportunities">Open queue →</a>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Pursuing</div>
+        <div class="stat-value">@_pursuingCount</div>
+        <div class="stat-sub">Active outreach</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">Partnering</div>
+        <div class="stat-value">@_partneringCount</div>
+        <div class="stat-sub">Teaming pursuits</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-label">No-bid (90d)</div>
+        <div class="stat-value muted">@_noBidCount</div>
+        <div class="stat-sub">Filtered out by scoring</div>
+    </article>
+</section>
+
 <section class="card-grid">
+    <article class="card @(_outboundConfigured ? "card-ok" : "card-warn")">
+        <h2>Outbound</h2>
+        @if (_outboundConfigured)
+        {
+            <p>Configured: <strong>@_outboundProvider</strong></p>
+            <p class="card-meta"><a href="/app/@Slug/settings/outbound">Edit configuration</a></p>
+        }
+        else
+        {
+            <p>No outbound provider configured. The sequence engine cannot send mail until you set one up.</p>
+            <p class="card-meta"><a href="/app/@Slug/settings/outbound">Configure now →</a></p>
+        }
+    </article>
     <article class="card">
-        <h2>Opportunities</h2>
-        <p>Pipeline ingestion starts once Phase 2 ships.</p>
+        <h2>Sources</h2>
+        <p><strong>@_enabledSources</strong> enabled / @_totalSources total</p>
+        <p class="card-meta"><a href="/app/@Slug/sources">Manage sources</a></p>
     </article>
     <article class="card">
         <h2>Members</h2>
         <p><a href="/app/@Slug/members">Invite teammates</a> to collaborate.</p>
     </article>
     <article class="card">
-        <h2>Settings</h2>
-        <p>Rename your workspace or manage integrations in <a href="/app/@Slug/settings">settings</a>.</p>
+        <h2>Activity</h2>
+        <p>Audit trail of every consequential event.</p>
+        <p class="card-meta"><a href="/app/@Slug/activity">View activity log →</a></p>
     </article>
 </section>
 
@@ -28,25 +76,46 @@
     [Parameter] public string Slug { get; set; } = "";
     private string? _tenantName;
     private string? _firstName;
+    private int _queueCount;
+    private int _pursuingCount;
+    private int _partneringCount;
+    private int _noBidCount;
+    private int _enabledSources;
+    private int _totalSources;
+    private bool _outboundConfigured;
+    private string? _outboundProvider;
 
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthState.GetAuthenticationStateAsync();
-        var tenantIdClaim = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
-        if (Guid.TryParse(tenantIdClaim, out var tenantId))
-        {
-            var tenant = await TenantMgmt.GetAsync(tenantId, CancellationToken.None);
-            _tenantName = tenant?.Name;
-        }
         _firstName = state.User.Identity?.Name?.Split(' ').FirstOrDefault();
+
+        var tidClaim = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (!Guid.TryParse(tidClaim, out var tenantId)) return;
+
+        var ct = CancellationToken.None;
+
+        var tenant = await TenantMgmt.GetAsync(tenantId, ct);
+        _tenantName = tenant?.Name;
+
+        var queue = await Queue.GetQueueAsync(tenantId, ct);
+        _queueCount = queue.Count;
+
+        var pursuing = await OppRepo.GetByStatusAsync(tenantId, OpportunityStatus.Pursuing, ct);
+        _pursuingCount = pursuing.Count;
+
+        var partnering = await OppRepo.GetByStatusAsync(tenantId, OpportunityStatus.Partnering, ct);
+        _partneringCount = partnering.Count;
+
+        var nobid = await OppRepo.GetByStatusAsync(tenantId, OpportunityStatus.NoBid, ct);
+        _noBidCount = nobid.Count(o => o.PostedDate >= DateTimeOffset.UtcNow.AddDays(-90));
+
+        var sources = await SourceRepo.GetForTenantAsync(tenantId, ct);
+        _totalSources = sources.Count;
+        _enabledSources = sources.Count(s => s.IsEnabled);
+
+        var outbound = await OutboundService.GetSummaryAsync(tenantId, ct);
+        _outboundConfigured = outbound is not null && outbound.IsEnabled;
+        _outboundProvider = outbound?.ProviderType.ToString();
     }
 }
-
-<style>
-    .lead { color: #6a6e82; margin-top: -0.5rem; }
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; margin-top: 2rem; }
-    .card { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.5rem; }
-    .card h2 { margin: 0 0 0.5rem; font-size: 1rem; color: #1a1c2d; }
-    .card p { margin: 0; color: #6a6e82; font-size: 0.9rem; }
-    .card a { color: #4b6bfb; }
-</style>
