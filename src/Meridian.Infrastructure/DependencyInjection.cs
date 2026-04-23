@@ -13,6 +13,7 @@ using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Application.Opportunities;
 using Meridian.Application.Outreach;
+using Meridian.Infrastructure.Crm;
 using Meridian.Infrastructure.Outreach;
 using Meridian.Infrastructure.Outreach.Resend;
 using Meridian.Infrastructure.Scoring;
@@ -107,6 +108,7 @@ public static class DependencyInjection
         services.AddScoped<OutboundConfigurationService>();
         services.AddScoped<OpportunityQueueService>();
         services.AddScoped<ManualEnrichmentService>();
+        services.AddSingleton<ICrmClient, NoopCrmClient>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 
