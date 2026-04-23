@@ -1,3 +1,4 @@
+using Meridian.Application.Outreach;
 using Meridian.Application.Ports;
 using Meridian.Domain.Tenants;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,47 +16,32 @@ public class ReplyMonitorJob : IMeridianJob
         var tenantRepo = scopedProvider.GetRequiredService<ITenantRepository>();
         var tenantContext = scopedProvider.GetRequiredService<ITenantContext>();
         var inboxMonitor = scopedProvider.GetRequiredService<IInboxMonitor>();
-        var outreachRepo = scopedProvider.GetRequiredService<IOutreachRepository>();
-        var auditLog = scopedProvider.GetRequiredService<IAuditLog>();
+        var processor = scopedProvider.GetRequiredService<ReplyProcessor>();
 
         var tenants = await tenantRepo.GetActiveTenantsAsync(ct);
         foreach (var tenant in tenants)
         {
             tenantContext.SetTenant(tenant.Id);
             var since = DateTimeOffset.UtcNow.AddHours(-4);
-            var result = await inboxMonitor.CheckForRepliesAsync(since, ct);
-            if (!result.IsSuccess)
+
+            var fetchResult = await inboxMonitor.CheckForRepliesAsync(since, ct);
+            if (!fetchResult.IsSuccess)
             {
-                logger.LogError("Reply monitor failed for {Tenant}: {Error}", tenant.Name, result.Error);
+                logger.LogError("Reply monitor fetch failed for {Tenant}: {Error}", tenant.Name, fetchResult.Error);
                 continue;
             }
 
-            foreach (var reply in result.Value!)
+            var processResult = await processor.ProcessAsync(tenant.Id, fetchResult.Value!, ct);
+            if (!processResult.IsSuccess)
             {
-                // Match by MessageId first, then subject fallback
-                var email = await outreachRepo.GetEmailByMessageIdAsync(tenant.Id, reply.MessageId, ct);
-                if (email is null)
-                {
-                    var normalizedSubject = reply.Subject.ToLowerInvariant().Replace("re: ", "");
-                    // Subject fallback would need contact matching — log for manual review
-                    logger.LogWarning("Unmatched reply from {From}: {Subject}", reply.FromAddress, reply.Subject);
-                    continue;
-                }
-
-                email.RecordReply(reply.ReceivedAt);
-
-                var enrollment = await outreachRepo.GetEnrollmentByIdAsync(email.EnrollmentId, ct);
-                enrollment?.MarkReplied();
-
-                await auditLog.AppendAsync(Domain.Audit.AuditEvent.Record(
-                    tenant.Id, "EmailActivity", email.Id, "ReplyDetected", "system",
-                    System.Text.Json.JsonSerializer.Serialize(new { reply.FromAddress, reply.Subject, reply.ReceivedAt })), ct);
-
-                logger.LogInformation("Reply detected from {From} for enrollment {EnrollmentId}",
-                    reply.FromAddress, email.EnrollmentId);
+                logger.LogError("Reply processor failed for {Tenant}: {Error}", tenant.Name, processResult.Error);
+                continue;
             }
 
-            await outreachRepo.SaveChangesAsync(ct);
+            var summary = processResult.Value!;
+            logger.LogInformation(
+                "Reply monitor for {Tenant}: matched-by-message-id={MessageIdMatches}, matched-by-subject={SubjectMatches}, unmatched={Unmatched}",
+                tenant.Name, summary.MatchedByMessageId, summary.MatchedBySubject, summary.Unmatched);
         }
     }
 }
