@@ -38,11 +38,6 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// See TenantCircuitHandler: keeps the scoped ITenantContext populated inside
-// every Blazor Server circuit so EF query filters return the right rows.
-builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler,
-    Meridian.Portal.Auth.TenantCircuitHandler>();
-
 var app = builder.Build();
 
 // Apply EF migrations on startup. Idempotent: a fresh DB gets the full schema,
