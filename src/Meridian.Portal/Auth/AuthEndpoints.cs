@@ -95,6 +95,11 @@ public static class AuthEndpoints
 }
 
 public record SignupFormModel(string Email, string FullName, string Password, string TenantName, string TenantSlug);
-public record LoginFormModel(string Email, string Password, string? TotpCode);
+public class LoginFormModel
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string? TotpCode { get; set; }
+}
 public record ForgotPasswordFormModel(string Email);
 public record ResetPasswordFormModel(string Token, string Password);
