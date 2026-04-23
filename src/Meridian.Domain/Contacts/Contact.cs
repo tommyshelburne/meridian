@@ -16,8 +16,11 @@ public class Contact
     public float ConfidenceScore { get; private set; }
     public bool IsOptedOut { get; private set; }
     public bool IsBounced { get; private set; }
+    public int SoftBounceCount { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? LastVerifiedAt { get; private set; }
+
+    public const int SoftBounceThreshold = 3;
 
     private Contact() { }
 
@@ -68,6 +71,24 @@ public class Contact
     public void MarkBounced()
     {
         IsBounced = true;
+    }
+
+    /// <summary>
+    /// Records a transient bounce. Returns true when the threshold has been
+    /// reached and the contact has been escalated to permanently bounced —
+    /// caller should add suppression and stop active enrollments. Returns
+    /// false when the soft bounce was just counted.
+    /// </summary>
+    public bool RecordSoftBounce()
+    {
+        if (IsBounced) return false;
+        SoftBounceCount++;
+        if (SoftBounceCount >= SoftBounceThreshold)
+        {
+            IsBounced = true;
+            return true;
+        }
+        return false;
     }
 
     public void Verify()

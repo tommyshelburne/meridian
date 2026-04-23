@@ -21,6 +21,7 @@ public class ContactConfiguration : IEntityTypeConfiguration<Contact>
         builder.Property(c => c.ConfidenceScore).HasColumnName("confidence_score");
         builder.Property(c => c.IsOptedOut).HasColumnName("is_opted_out");
         builder.Property(c => c.IsBounced).HasColumnName("is_bounced");
+        builder.Property(c => c.SoftBounceCount).HasColumnName("soft_bounce_count").HasDefaultValue(0);
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.LastVerifiedAt).HasColumnName("last_verified_at");
 
