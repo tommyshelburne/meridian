@@ -3,6 +3,7 @@ using Meridian.Infrastructure.Persistence;
 using Meridian.Portal.Auth;
 using Meridian.Portal.Components;
 using Meridian.Portal.Ingestion;
+using Meridian.Portal.Opportunities;
 using Meridian.Portal.Outreach;
 using Meridian.Portal.Sources;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -63,6 +64,7 @@ app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();
 app.MapResendWebhookEndpoints();
 app.MapOutboundConfigEndpoints();
+app.MapOpportunityEndpoints();
 app.MapSourceEndpoints();
 
 app.MapStaticAssets();

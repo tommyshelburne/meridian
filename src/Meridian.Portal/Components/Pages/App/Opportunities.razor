@@ -1,0 +1,154 @@
+@page "/app/{Slug}/opportunities"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Application.Opportunities
+@using Meridian.Domain.Common
+@using Meridian.Domain.Opportunities
+
+<PageTitle>Opportunities · Meridian</PageTitle>
+
+<h1>Opportunity queue</h1>
+<p class="page-lede">
+    Scored opportunities awaiting a decision. Sorted by total score, highest first.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Decision recorded.</div>
+}
+
+@if (_opportunities is null)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_opportunities.Count == 0)
+{
+    <div class="empty-state">
+        <p>No scored opportunities yet.</p>
+        <p class="muted">Once the worker ingests and scores opportunities from your configured sources, they'll show up here for review.</p>
+    </div>
+}
+else
+{
+    <table class="opp-table">
+        <thead>
+            <tr>
+                <th>Score</th>
+                <th>Title</th>
+                <th>Agency</th>
+                <th>Source</th>
+                <th>Seats</th>
+                <th>Deadline</th>
+                <th>Decision</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var opp in _opportunities)
+            {
+                <tr class="@RowClassFor(opp)">
+                    <td>
+                        <div class="score">@(opp.Score?.Total) <span class="score-max">/14</span></div>
+                        <div class="verdict @VerdictClass(opp.Score?.Verdict)">@opp.Score?.Verdict</div>
+                    </td>
+                    <td>
+                        <div class="title">@opp.Title</div>
+                        <div class="muted">@opp.ExternalId</div>
+                    </td>
+                    <td>
+                        <div>@opp.Agency.Name</div>
+                        <div class="muted">@opp.Agency.Type @(opp.Agency.State is null ? "" : $"· {opp.Agency.State}")</div>
+                    </td>
+                    <td>@opp.Source</td>
+                    <td>
+                        @if (opp.EstimatedSeats is { } seats)
+                        {
+                            <div>@seats.ToString("N0")</div>
+                            <div class="muted">@opp.SeatEstimateConfidence</div>
+                        }
+                        else
+                        {
+                            <span class="muted">—</span>
+                        }
+                    </td>
+                    <td>@(opp.ResponseDeadline?.ToString("yyyy-MM-dd") ?? "—")</td>
+                    <td>
+                        <form method="post" action="/app/@Slug/opportunities/decide" class="decision-form">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="OpportunityId" value="@opp.Id" />
+                            <button type="submit" name="Decision" value="Pursue" class="btn-pursue">Pursue</button>
+                            <button type="submit" name="Decision" value="Partner" class="btn-partner">Partner</button>
+                            <button type="submit" name="Decision" value="Watch" class="btn-watch">Watch</button>
+                            <button type="submit" name="Decision" value="Reject" class="btn-reject">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private OpportunityQueueService Queue { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<Opportunity>? _opportunities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _opportunities = await Queue.GetQueueAsync(tenantId, CancellationToken.None);
+    }
+
+    private static string RowClassFor(Opportunity opp) => opp.Score?.Verdict switch
+    {
+        ScoreVerdict.Pursue => "row-pursue",
+        ScoreVerdict.Partner => "row-partner",
+        _ => string.Empty
+    };
+
+    private static string VerdictClass(ScoreVerdict? v) => v switch
+    {
+        ScoreVerdict.Pursue => "verdict-pursue",
+        ScoreVerdict.Partner => "verdict-partner",
+        ScoreVerdict.NoBid => "verdict-nobid",
+        _ => string.Empty
+    };
+}
+
+<style>
+    .page-lede { color: #555; max-width: 38rem; margin-bottom: 1.25rem; }
+    .empty-state { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 2rem; text-align: center; }
+    .empty-state p { margin: 0.25rem 0; }
+    .muted { color: #6a6e82; font-size: 0.85rem; }
+    .opp-table { width: 100%; background: white; border: 1px solid #e3e6ef; border-radius: 10px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+    .opp-table th, .opp-table td { padding: 0.75rem 0.85rem; text-align: left; border-bottom: 1px solid #eef0f7; vertical-align: top; font-size: 0.88rem; }
+    .opp-table tr:last-child td { border-bottom: none; }
+    .opp-table th { background: #f7f8fc; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6a6e82; }
+    .opp-table .row-pursue { background: linear-gradient(90deg, #f0f7ff 0, white 100%); }
+    .opp-table .row-partner { background: linear-gradient(90deg, #fdf8ed 0, white 100%); }
+    .score { font-size: 1.15rem; font-weight: 700; color: #1a1c2d; }
+    .score-max { font-weight: 400; color: #9ba0b6; font-size: 0.78rem; }
+    .verdict { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; margin-top: 0.25rem; }
+    .verdict-pursue { background: #1f6feb; color: white; }
+    .verdict-partner { background: #d6a93d; color: white; }
+    .verdict-nobid { background: #b0b6c5; color: white; }
+    .title { font-weight: 600; color: #1a1c2d; max-width: 22rem; }
+    .decision-form { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    .decision-form button { padding: 0.3rem 0.55rem; border: 1px solid #cfd3e0; background: white; border-radius: 4px; font-size: 0.78rem; cursor: pointer; }
+    .decision-form .btn-pursue:hover { background: #1f6feb; color: white; border-color: #1f6feb; }
+    .decision-form .btn-partner:hover { background: #d6a93d; color: white; border-color: #d6a93d; }
+    .decision-form .btn-watch:hover { background: #4b6bfb; color: white; border-color: #4b6bfb; }
+    .decision-form .btn-reject:hover { background: #c44; color: white; border-color: #c44; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+</style>
