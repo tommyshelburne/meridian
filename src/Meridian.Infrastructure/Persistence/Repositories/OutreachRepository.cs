@@ -80,5 +80,11 @@ public class OutreachRepository : IOutreachRepository
     public async Task AddSuppressionAsync(SuppressionEntry entry, CancellationToken ct)
         => await _db.SuppressionEntries.AddAsync(entry, ct);
 
+    public async Task<IReadOnlyList<OutreachEnrollment>> GetActiveEnrollmentsForContactAsync(
+        Guid tenantId, Guid contactId, CancellationToken ct)
+        => await _db.OutreachEnrollments
+            .Where(e => e.ContactId == contactId && e.Status == EnrollmentStatus.Active)
+            .ToListAsync(ct);
+
     public Task SaveChangesAsync(CancellationToken ct) => _db.SaveChangesAsync(ct);
 }

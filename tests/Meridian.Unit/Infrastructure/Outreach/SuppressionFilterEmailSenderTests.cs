@@ -94,6 +94,7 @@ public class SuppressionFilterEmailSenderTests
         }
 
         public Task AddSuppressionAsync(SuppressionEntry entry, CancellationToken ct) => Task.CompletedTask;
+        public Task<IReadOnlyList<OutreachEnrollment>> GetActiveEnrollmentsForContactAsync(Guid t, Guid c, CancellationToken ct) => Task.FromResult<IReadOnlyList<OutreachEnrollment>>(Array.Empty<OutreachEnrollment>());
 
         public Task<OutreachEnrollment?> GetEnrollmentByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<OutreachEnrollment?>(null);
         public Task<OutreachEnrollment?> GetEnrollmentAsync(Guid tenantId, Guid contactId, Guid opportunityId, CancellationToken ct) => Task.FromResult<OutreachEnrollment?>(null);

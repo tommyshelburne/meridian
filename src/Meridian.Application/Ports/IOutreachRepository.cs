@@ -28,5 +28,8 @@ public interface IOutreachRepository
     Task<bool> IsSuppressedAsync(Guid tenantId, string email, CancellationToken ct);
     Task AddSuppressionAsync(SuppressionEntry entry, CancellationToken ct);
 
+    Task<IReadOnlyList<OutreachEnrollment>> GetActiveEnrollmentsForContactAsync(
+        Guid tenantId, Guid contactId, CancellationToken ct);
+
     Task SaveChangesAsync(CancellationToken ct);
 }
