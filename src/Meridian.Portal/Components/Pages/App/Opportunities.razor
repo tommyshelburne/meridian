@@ -30,6 +30,14 @@ else if (_opportunities.Count == 0)
     <div class="empty-state">
         <p>No scored opportunities yet.</p>
         <p class="muted">Once the worker ingests and scores opportunities from your configured sources, they'll show up here for review.</p>
+        @if (Env.IsDevelopment())
+        {
+            <form method="post" action="/app/@Slug/opportunities/seed" class="seed-form">
+                <AntiforgeryToken />
+                <button type="submit">Seed sample opportunities</button>
+                <small class="muted">Dev only. Creates ~6 demo opportunities scored against the real engine.</small>
+            </form>
+        }
     </div>
 }
 else
@@ -97,6 +105,7 @@ else
     [SupplyParameterFromQuery] public string? Saved { get; set; }
 
     [Inject] private OpportunityQueueService Queue { get; set; } = default!;
+    [Inject] private IWebHostEnvironment Env { get; set; } = default!;
     [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
 
     private IReadOnlyList<Opportunity>? _opportunities;
