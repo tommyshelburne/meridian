@@ -1,0 +1,124 @@
+@page "/app/{Slug}/activity"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Application.Ports
+@using Meridian.Domain.Audit
+
+<PageTitle>Activity log · Meridian</PageTitle>
+
+<h1>Activity log</h1>
+<p class="page-lede">
+    Every consequential event the system records. Most recent first.
+</p>
+
+<form method="get" class="filter-bar">
+    <label>Entity
+        <select name="entity">
+            <option value="">All</option>
+            <option value="Opportunity" selected="@(EntityType == "Opportunity")">Opportunity</option>
+            <option value="EmailActivity" selected="@(EntityType == "EmailActivity")">EmailActivity</option>
+            <option value="OutreachEnrollment" selected="@(EntityType == "OutreachEnrollment")">OutreachEnrollment</option>
+            <option value="Contact" selected="@(EntityType == "Contact")">Contact</option>
+        </select>
+    </label>
+    <label>Event
+        <select name="event">
+            <option value="">All</option>
+            <option value="OpportunityScored" selected="@(EventType == "OpportunityScored")">OpportunityScored</option>
+            <option value="DealCreated" selected="@(EventType == "DealCreated")">DealCreated</option>
+            <option value="EmailSent" selected="@(EventType == "EmailSent")">EmailSent</option>
+            <option value="ReplyDetected" selected="@(EventType == "ReplyDetected")">ReplyDetected</option>
+            <option value="HardBounce" selected="@(EventType == "HardBounce")">HardBounce</option>
+            <option value="SoftBounce" selected="@(EventType == "SoftBounce")">SoftBounce</option>
+            <option value="SpamComplaint" selected="@(EventType == "SpamComplaint")">SpamComplaint</option>
+            <option value="OpportunityAmended" selected="@(EventType == "OpportunityAmended")">OpportunityAmended</option>
+        </select>
+    </label>
+    <button type="submit">Apply</button>
+    <a class="reset" href="/app/@Slug/activity">Reset</a>
+</form>
+
+@if (_events is null)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_events.Count == 0)
+{
+    <div class="empty-state">
+        <p>No activity matches these filters.</p>
+        <p class="muted">Run the worker, score an opportunity, or send a sequence to populate this log.</p>
+    </div>
+}
+else
+{
+    <ol class="event-list">
+        @foreach (var evt in _events)
+        {
+            <li class="event-item @KindClass(evt.EventType)">
+                <div class="event-meta">
+                    <time datetime="@evt.OccurredAt.ToString("o")">@evt.OccurredAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</time>
+                    <span class="event-actor">@evt.Actor</span>
+                </div>
+                <div class="event-headline">
+                    <span class="badge badge-@KindClass(evt.EventType)">@evt.EventType</span>
+                    <span class="entity">@evt.EntityType <code>@FormatEntityId(evt.EntityId)</code></span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(evt.PayloadJson) && evt.PayloadJson != "null" && evt.PayloadJson != "{}")
+                {
+                    <pre class="event-payload">@PrettyJson(evt.PayloadJson)</pre>
+                }
+            </li>
+        }
+    </ol>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery(Name = "entity")] public string? EntityType { get; set; }
+    [SupplyParameterFromQuery(Name = "event")] public string? EventType { get; set; }
+
+    [Inject] private IAuditLog AuditLog { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<AuditEvent>? _events;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+        {
+            _events = await AuditLog.QueryAsync(
+                tenantId,
+                string.IsNullOrWhiteSpace(EntityType) ? null : EntityType,
+                string.IsNullOrWhiteSpace(EventType) ? null : EventType,
+                from: null, to: null, limit: 100,
+                ct: CancellationToken.None);
+        }
+    }
+
+    private static string FormatEntityId(Guid id) => id == Guid.Empty ? "—" : id.ToString().Substring(0, 8);
+
+    private static string PrettyJson(string raw)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            return System.Text.Json.JsonSerializer.Serialize(doc.RootElement,
+                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            return raw;
+        }
+    }
+
+    private static string KindClass(string eventType) => eventType switch
+    {
+        "EmailSent" or "DealCreated" or "OpportunityScored" => "ok",
+        "ReplyDetected" => "info",
+        "HardBounce" or "SpamComplaint" => "danger",
+        "SoftBounce" => "warn",
+        _ => "neutral"
+    };
+}

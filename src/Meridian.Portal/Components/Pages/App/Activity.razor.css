@@ -1,0 +1,36 @@
+.page-lede { color: #555; max-width: 38rem; margin-bottom: 1.25rem; }
+.muted { color: #6a6e82; font-size: 0.85rem; }
+
+.filter-bar { display: flex; gap: 0.75rem; align-items: flex-end; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.filter-bar label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: #6a6e82; text-transform: uppercase; letter-spacing: 0.04em; }
+.filter-bar select { padding: 0.5rem 0.7rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 0.9rem; min-width: 12rem; }
+.filter-bar button { padding: 0.55rem 1rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.filter-bar .reset { color: #6a6e82; font-size: 0.85rem; text-decoration: none; padding-bottom: 0.5rem; }
+.filter-bar .reset:hover { color: #2a3552; text-decoration: underline; }
+
+.empty-state { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 2rem; text-align: center; }
+.empty-state p { margin: 0.25rem 0; }
+
+.event-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.event-item { background: white; border: 1px solid #e3e6ef; border-left: 3px solid #cfd3e0; border-radius: 6px; padding: 0.85rem 1rem; }
+.event-item.ok { border-left-color: #2a8a3e; }
+.event-item.info { border-left-color: #1f6feb; }
+.event-item.warn { border-left-color: #d6a93d; }
+.event-item.danger { border-left-color: #c04040; }
+
+.event-meta { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.75rem; color: #6a6e82; margin-bottom: 0.4rem; }
+.event-meta time { font-variant-numeric: tabular-nums; }
+.event-actor { text-transform: lowercase; }
+
+.event-headline { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; font-size: 0.92rem; }
+.entity { color: #1a1c2d; }
+.entity code { background: #f3f4fa; padding: 0.05rem 0.4rem; border-radius: 3px; font-size: 0.78rem; color: #555; }
+
+.badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: white; }
+.badge-ok { background: #2a8a3e; }
+.badge-info { background: #1f6feb; }
+.badge-warn { background: #d6a93d; }
+.badge-danger { background: #c04040; }
+.badge-neutral { background: #6a6e82; }
+
+.event-payload { margin: 0.6rem 0 0; padding: 0.6rem 0.8rem; background: #f7f8fc; border: 1px solid #e3e6ef; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.78rem; color: #2a3552; max-height: 14rem; overflow: auto; white-space: pre-wrap; word-break: break-word; }
