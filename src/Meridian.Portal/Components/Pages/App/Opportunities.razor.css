@@ -1,6 +1,10 @@
 .page-lede { color: #555; max-width: 38rem; margin-bottom: 1.25rem; }
 .empty-state { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 2rem; text-align: center; }
 .empty-state p { margin: 0.25rem 0; }
+.seed-form { margin-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.seed-form button { padding: 0.6rem 1.25rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.seed-form button:hover { background: #1a223b; }
+.seed-form small { font-size: 0.78rem; }
 .muted { color: #6a6e82; font-size: 0.85rem; }
 .opp-table { width: 100%; background: white; border: 1px solid #e3e6ef; border-radius: 10px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
 .opp-table th, .opp-table td { padding: 0.75rem 0.85rem; text-align: left; border-bottom: 1px solid #eef0f7; vertical-align: top; font-size: 0.88rem; }

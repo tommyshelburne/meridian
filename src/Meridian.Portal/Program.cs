@@ -70,6 +70,7 @@ app.MapResendWebhookEndpoints();
 app.MapOutboundConfigEndpoints();
 app.MapOpportunityEndpoints();
 app.MapEnrichmentEndpoints();
+app.MapDevSeedEndpoints(app.Environment);
 app.MapSourceEndpoints();
 
 app.MapStaticAssets();
