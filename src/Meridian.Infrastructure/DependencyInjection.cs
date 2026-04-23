@@ -11,6 +11,7 @@ using Meridian.Infrastructure.Ingestion.SamGov;
 using Meridian.Infrastructure.Ingestion.UsaSpending;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
+using Meridian.Application.Opportunities;
 using Meridian.Application.Outreach;
 using Meridian.Infrastructure.Outreach;
 using Meridian.Infrastructure.Outreach.Resend;
@@ -104,6 +105,7 @@ public static class DependencyInjection
         services.AddScoped<ReplyProcessor>();
         services.AddScoped<BounceProcessor>();
         services.AddScoped<OutboundConfigurationService>();
+        services.AddScoped<OpportunityQueueService>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 

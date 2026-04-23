@@ -190,6 +190,9 @@ public class IngestionOrchestratorTests
                 && o.SourceDefinitionId == sourceDefinitionId
                 && o.ExternalId == externalId));
 
+        public Task<IReadOnlyList<Opportunity>> GetByStatusesAsync(Guid t, IReadOnlyCollection<OpportunityStatus> s, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
+
         public Task<IReadOnlyList<Opportunity>> GetByStatusAsync(Guid tenantId, OpportunityStatus status, CancellationToken ct)
             => Task.FromResult<IReadOnlyList<Opportunity>>(
                 _seeded.Concat(Added).Where(o => o.TenantId == tenantId && o.Status == status).ToList());
