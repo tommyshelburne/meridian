@@ -39,6 +39,33 @@ public class OpportunityRepository : IOpportunityRepository
     public async Task<IReadOnlyList<Opportunity>> GetWatchedAsync(Guid tenantId, CancellationToken ct)
         => await _db.Opportunities.Where(o => o.WatchedSince != null).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Opportunity>> GetUnenrichedAsync(Guid tenantId, CancellationToken ct)
+    {
+        // Pursue/Partner verdicts that the automated enricher couldn't seed with a contact.
+        // !Contacts.Any() translates to a NOT EXISTS subquery — no in-memory load.
+        var verdicts = new[]
+        {
+            ScoreVerdict.Pursue,
+            ScoreVerdict.Partner
+        };
+        var statuses = new[]
+        {
+            OpportunityStatus.Scored,
+            OpportunityStatus.PendingReview,
+            OpportunityStatus.Pursuing,
+            OpportunityStatus.Partnering
+        };
+
+        return await _db.Opportunities
+            .Where(o => statuses.Contains(o.Status)
+                && o.Score != null
+                && verdicts.Contains(o.Score.Verdict)
+                && !o.Contacts.Any())
+            .OrderByDescending(o => o.Score!.Total)
+            .ThenByDescending(o => o.PostedDate)
+            .ToListAsync(ct);
+    }
+
     public async Task AddAsync(Opportunity opportunity, CancellationToken ct)
         => await _db.Opportunities.AddAsync(opportunity, ct);
 

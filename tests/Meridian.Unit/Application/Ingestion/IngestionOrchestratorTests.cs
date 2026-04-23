@@ -201,6 +201,9 @@ public class IngestionOrchestratorTests
             => Task.FromResult<IReadOnlyList<Opportunity>>(
                 _seeded.Concat(Added).Where(o => o.TenantId == tenantId && o.WatchedSince != null).ToList());
 
+        public Task<IReadOnlyList<Opportunity>> GetUnenrichedAsync(Guid tenantId, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
+
         public Task AddAsync(Opportunity opportunity, CancellationToken ct)
         {
             Added.Add(opportunity);

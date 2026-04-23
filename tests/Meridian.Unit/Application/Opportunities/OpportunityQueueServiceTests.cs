@@ -117,6 +117,7 @@ public class OpportunityQueueServiceTests
         public Task<Opportunity?> GetBySourceExternalIdAsync(Guid t, Guid s, string e, CancellationToken ct) => Task.FromResult<Opportunity?>(null);
         public Task<IReadOnlyList<Opportunity>> GetByStatusAsync(Guid t, OpportunityStatus s, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
         public Task<IReadOnlyList<Opportunity>> GetWatchedAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
+        public Task<IReadOnlyList<Opportunity>> GetUnenrichedAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
         public Task AddAsync(Opportunity o, CancellationToken ct) => Task.CompletedTask;
         public Task SaveChangesAsync(CancellationToken ct) => Task.CompletedTask;
     }
@@ -144,6 +145,7 @@ public class OpportunityQueueServiceTests
         public Task<Opportunity?> GetBySourceExternalIdAsync(Guid t, Guid s, string e, CancellationToken ct) => Task.FromResult<Opportunity?>(null);
         public Task<IReadOnlyList<Opportunity>> GetByStatusAsync(Guid t, OpportunityStatus s, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
         public Task<IReadOnlyList<Opportunity>> GetWatchedAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
+        public Task<IReadOnlyList<Opportunity>> GetUnenrichedAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
         public Task AddAsync(Opportunity o, CancellationToken ct) => Task.CompletedTask;
     }
 }

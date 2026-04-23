@@ -106,6 +106,7 @@ public static class DependencyInjection
         services.AddScoped<BounceProcessor>();
         services.AddScoped<OutboundConfigurationService>();
         services.AddScoped<OpportunityQueueService>();
+        services.AddScoped<ManualEnrichmentService>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 

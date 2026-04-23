@@ -12,6 +12,7 @@ public interface IOpportunityRepository
     Task<IReadOnlyList<Opportunity>> GetByStatusAsync(Guid tenantId, OpportunityStatus status, CancellationToken ct);
     Task<IReadOnlyList<Opportunity>> GetByStatusesAsync(Guid tenantId, IReadOnlyCollection<OpportunityStatus> statuses, CancellationToken ct);
     Task<IReadOnlyList<Opportunity>> GetWatchedAsync(Guid tenantId, CancellationToken ct);
+    Task<IReadOnlyList<Opportunity>> GetUnenrichedAsync(Guid tenantId, CancellationToken ct);
     Task AddAsync(Opportunity opportunity, CancellationToken ct);
     Task SaveChangesAsync(CancellationToken ct);
 }
