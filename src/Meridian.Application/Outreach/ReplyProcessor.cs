@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Meridian.Application.Outreach;
 
+public record DetectedReply(string MessageId, string Subject, DateTimeOffset ReceivedAt, string FromAddress);
+
 public class ReplyProcessor
 {
     private static readonly Regex SubjectPrefixPattern =

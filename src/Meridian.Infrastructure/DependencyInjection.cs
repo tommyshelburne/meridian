@@ -13,7 +13,6 @@ using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Application.Outreach;
 using Meridian.Infrastructure.Outreach;
-using Meridian.Infrastructure.Outreach.Graph;
 using Meridian.Infrastructure.Scoring;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -96,20 +95,6 @@ public static class DependencyInjection
         services.Configure<EmailComplianceOptions>(configuration.GetSection(EmailComplianceOptions.SectionName));
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
         services.AddScoped<ReplyProcessor>();
-
-        // Microsoft Graph reply monitor (app-only client credentials)
-        services.Configure<MeridianGraphOptions>(configuration.GetSection(MeridianGraphOptions.SectionName));
-        services.AddHttpClient<GraphTokenProvider>();
-        services.AddSingleton<GraphTokenProvider>(sp =>
-        {
-            var factory = sp.GetRequiredService<IHttpClientFactory>();
-            return new GraphTokenProvider(
-                factory.CreateClient(nameof(GraphTokenProvider)),
-                sp.GetRequiredService<IOptions<MeridianGraphOptions>>(),
-                sp.GetRequiredService<ILogger<GraphTokenProvider>>());
-        });
-        services.AddHttpClient<GraphReplyMonitor>();
-        services.AddTransient<IInboxMonitor, GraphReplyMonitor>();
 
         // Auth services
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));

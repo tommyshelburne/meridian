@@ -12,7 +12,6 @@ builder.Services.AddMeridianInfrastructure(connectionString, builder.Configurati
 // Worker jobs
 builder.Services.AddSingleton<IMeridianJob, IngestionJob>();
 builder.Services.AddSingleton<IMeridianJob, SequenceJob>();
-builder.Services.AddSingleton<IMeridianJob, ReplyMonitorJob>();
 builder.Services.AddSingleton<IMeridianJob, BidMonitorJob>();
 
 // Hosted service
