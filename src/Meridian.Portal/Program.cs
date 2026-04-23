@@ -65,6 +65,7 @@ app.MapWebhookIngestEndpoints();
 app.MapResendWebhookEndpoints();
 app.MapOutboundConfigEndpoints();
 app.MapOpportunityEndpoints();
+app.MapEnrichmentEndpoints();
 app.MapSourceEndpoints();
 
 app.MapStaticAssets();

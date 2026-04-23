@@ -1,0 +1,30 @@
+.page-lede { color: #555; max-width: 38rem; margin-bottom: 1.25rem; }
+.muted { color: #6a6e82; font-size: 0.85rem; }
+
+.empty-state { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 2rem; text-align: center; }
+
+.enrich-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.85rem; }
+.enrich-card { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.1rem 1.25rem; }
+
+.card-meta { display: flex; align-items: center; gap: 0.55rem; font-size: 0.8rem; margin-bottom: 0.45rem; }
+.score-pill { font-weight: 700; color: #1a1c2d; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.score-pill .muted { font-weight: 400; font-size: 0.7rem; }
+.verdict { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.1rem 0.45rem; border-radius: 999px; color: white; }
+.verdict.pursue { background: #1f6feb; }
+.verdict.partner { background: #d6a93d; }
+
+.card-title { font-weight: 600; color: #1a1c2d; font-size: 1rem; margin-bottom: 0.35rem; }
+.card-agency { font-size: 0.88rem; color: #2a3552; margin-bottom: 0.85rem; }
+
+.add-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; }
+.add-form input { padding: 0.5rem 0.7rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 0.9rem; }
+.add-form button { padding: 0.55rem 1rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.add-form button:hover { background: #1a223b; }
+
+@media (max-width: 50rem) {
+    .add-form { grid-template-columns: 1fr 1fr; }
+    .add-form button { grid-column: 1 / -1; }
+}
+
+.auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+.auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }

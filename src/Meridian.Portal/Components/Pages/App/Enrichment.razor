@@ -1,0 +1,85 @@
+@page "/app/{Slug}/enrichment"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Application.Opportunities
+@using Meridian.Domain.Common
+@using Meridian.Domain.Opportunities
+
+<PageTitle>Manual enrichment · Meridian</PageTitle>
+
+<h1>Manual enrichment queue</h1>
+<p class="page-lede">
+    Pursue/Partner opportunities where automated POC enrichment didn't find anyone.
+    Add a contact and the next sequence run will pick it up.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Contact added. Refresh to see updated queue.</div>
+}
+
+@if (_opportunities is null)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_opportunities.Count == 0)
+{
+    <div class="empty-state">
+        <p>Nothing here. Every Pursue/Partner opportunity has at least one contact.</p>
+    </div>
+}
+else
+{
+    <ol class="enrich-list">
+        @foreach (var opp in _opportunities)
+        {
+            <li class="enrich-card">
+                <div class="card-meta">
+                    <span class="score-pill">@opp.Score?.Total<span class="muted">/14</span></span>
+                    <span class="verdict @(opp.Score?.Verdict.ToString().ToLowerInvariant())">@opp.Score?.Verdict</span>
+                    <span class="muted">@opp.Source · @opp.PostedDate.ToString("yyyy-MM-dd")</span>
+                </div>
+                <div class="card-title">@opp.Title</div>
+                <div class="card-agency">
+                    <strong>@opp.Agency.Name</strong>
+                    <span class="muted">· @opp.Agency.Type @(opp.Agency.State is null ? "" : $"· {opp.Agency.State}")</span>
+                    @if (!string.IsNullOrWhiteSpace(opp.NaicsCode))
+                    {
+                        <span class="muted">· NAICS @opp.NaicsCode</span>
+                    }
+                </div>
+                <form method="post" action="/app/@Slug/enrichment/add" class="add-form">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="OpportunityId" value="@opp.Id" />
+                    <input type="text" name="FullName" placeholder="Full name" required />
+                    <input type="email" name="Email" placeholder="Email" required />
+                    <input type="text" name="Title" placeholder="Title (optional)" />
+                    <button type="submit">Attach contact</button>
+                </form>
+            </li>
+        }
+    </ol>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private ManualEnrichmentService EnrichmentSvc { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<Opportunity>? _opportunities;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _opportunities = await EnrichmentSvc.GetUnenrichedAsync(tenantId, CancellationToken.None);
+    }
+}
