@@ -102,7 +102,9 @@ public static class DependencyInjection
         services.Configure<ResendOptions>(configuration.GetSection(ResendOptions.SectionName));
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
         services.AddScoped<ReplyProcessor>();
+        services.AddScoped<BounceProcessor>();
         services.AddScoped<TenantOutboundContext>();
+        services.AddSingleton<SvixSignatureVerifier>();
 
         // Auth services
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
