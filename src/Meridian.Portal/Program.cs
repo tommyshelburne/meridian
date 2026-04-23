@@ -42,9 +42,12 @@ var app = builder.Build();
 
 // Apply EF migrations on startup. Idempotent: a fresh DB gets the full schema,
 // an up-to-date DB is a no-op, anything in between brings forward only the
-// pending migrations. Production-safe; dev convenient.
-using (var scope = app.Services.CreateScope())
+// pending migrations. Production-safe; dev convenient. Skipped under the
+// "Testing" environment, where the WebApplicationFactory swaps the DbContext
+// provider for InMemory and runs EnsureCreated itself.
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<MeridianDbContext>();
     await db.Database.MigrateAsync();
 }
