@@ -62,6 +62,7 @@ app.MapAuthEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();
 app.MapResendWebhookEndpoints();
+app.MapOutboundConfigEndpoints();
 app.MapSourceEndpoints();
 
 app.MapStaticAssets();

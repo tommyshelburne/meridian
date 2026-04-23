@@ -1,0 +1,141 @@
+@page "/app/{Slug}/settings/outbound"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+@using Meridian.Application.Outreach
+@using Meridian.Domain.Outreach
+
+<PageTitle>Outbound · Meridian</PageTitle>
+
+<h1>Outbound configuration</h1>
+<p class="page-lede">
+    Choose an email provider, paste credentials, and supply CAN-SPAM contact info.
+    The sequence engine won't send anything until this is configured.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Outbound configuration saved.</div>
+}
+
+<section class="settings-section">
+    <form method="post" action="/app/@Slug/settings/outbound">
+        <AntiforgeryToken />
+
+        <div class="row">
+            <label>Provider
+                <select name="ProviderType">
+                    <option value="@OutboundProviderType.Console" selected="@(_summary?.ProviderType == OutboundProviderType.Console)">
+                        Console (logs only — for development)
+                    </option>
+                    <option value="@OutboundProviderType.Resend" selected="@(_summary?.ProviderType == OutboundProviderType.Resend)">
+                        Resend
+                    </option>
+                </select>
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Resend API key
+                <input type="password" name="ApiKey" autocomplete="new-password"
+                       placeholder="@(_summary?.HasApiKey == true ? "•••••• (leave blank to keep)" : "rsk_live_…")" />
+                <small>Required when switching to Resend; leave blank to preserve the stored key.</small>
+            </label>
+        </div>
+
+        <div class="row two-col">
+            <label>From address
+                <input type="email" name="FromAddress" required value="@(_summary?.FromAddress)" />
+            </label>
+            <label>From display name
+                <input type="text" name="FromName" required value="@(_summary?.FromName)" />
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Reply-to (optional)
+                <input type="email" name="ReplyToAddress" value="@(_summary?.ReplyToAddress)" />
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Physical mailing address (CAN-SPAM)
+                <input type="text" name="PhysicalAddress" required value="@(_summary?.PhysicalAddress)" />
+                <small>Appears in every email footer. Required by CAN-SPAM.</small>
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Unsubscribe URL
+                <input type="url" name="UnsubscribeBaseUrl" required value="@(_summary?.UnsubscribeBaseUrl)" />
+                <small>Recipient email is appended to the URL when the footer is rendered.</small>
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Resend webhook signing secret
+                <input type="password" name="WebhookSecret" autocomplete="new-password"
+                       placeholder="@(_summary?.HasWebhookSecret == true ? "•••••• (leave blank to keep)" : "whsec_…")" />
+                <small>Optional. Required for the bounce/complaint webhook at <code>/api/webhooks/resend/{tenantId}</code>.</small>
+            </label>
+        </div>
+
+        <button type="submit">@(_summary is null ? "Create configuration" : "Update")</button>
+    </form>
+</section>
+
+@if (_summary is not null)
+{
+    <aside class="meta-card">
+        <h2>Current state</h2>
+        <dl>
+            <dt>Provider</dt><dd>@_summary.ProviderType</dd>
+            <dt>API key stored</dt><dd>@(_summary.HasApiKey ? "yes" : "no")</dd>
+            <dt>Webhook secret stored</dt><dd>@(_summary.HasWebhookSecret ? "yes" : "no")</dd>
+            <dt>Enabled</dt><dd>@_summary.IsEnabled</dd>
+            <dt>Updated</dt><dd>@_summary.UpdatedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        </dl>
+    </aside>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private OutboundConfigurationService Service { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private OutboundConfigurationSummary? _summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _summary = await Service.GetSummaryAsync(tenantId, CancellationToken.None);
+    }
+}
+
+<style>
+    .page-lede { color: #555; max-width: 38rem; margin-bottom: 1.25rem; }
+    .settings-section { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.5rem; max-width: 38rem; }
+    .settings-section form { display: flex; flex-direction: column; gap: 1rem; }
+    .settings-section .row { display: flex; flex-direction: column; }
+    .settings-section .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .settings-section label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .settings-section input, .settings-section select { padding: 0.55rem 0.75rem; border: 1px solid #cfd3e0; border-radius: 6px; font-size: 0.95rem; }
+    .settings-section small { color: #6a6e82; font-size: 0.78rem; line-height: 1.4; }
+    .settings-section button { padding: 0.65rem 1.25rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+    .settings-section code { background: #f3f4fa; padding: 0.05rem 0.35rem; border-radius: 3px; font-size: 0.78rem; }
+    .meta-card { margin-top: 1.5rem; background: #f7f8fc; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem; max-width: 38rem; }
+    .meta-card h2 { margin: 0 0 0.75rem; font-size: 0.95rem; }
+    .meta-card dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; margin: 0; font-size: 0.88rem; }
+    .meta-card dt { color: #6a6e82; }
+    .meta-card dd { margin: 0; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+</style>

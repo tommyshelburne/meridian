@@ -103,6 +103,7 @@ public static class DependencyInjection
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
         services.AddScoped<ReplyProcessor>();
         services.AddScoped<BounceProcessor>();
+        services.AddScoped<OutboundConfigurationService>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 
