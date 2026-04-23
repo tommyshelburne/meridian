@@ -40,15 +40,16 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Apply EF migrations on startup. Idempotent: a fresh DB gets the full schema,
+// an up-to-date DB is a no-op, anything in between brings forward only the
+// pending migrations. Production-safe; dev convenient.
+using (var scope = app.Services.CreateScope())
 {
-    // Dev-only: bootstrap schema from the EF model. Production should use
-    // explicit migrations rather than EnsureCreated.
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<MeridianDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
 }
-else
+
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }

@@ -1,6 +1,9 @@
 ## .NET
 bin/
 obj/
+# EF Core tooling on macOS sometimes emits literal-backslash paths
+bin\Debug/
+bin\Release/
 *.user
 *.suo
 *.userosscache
