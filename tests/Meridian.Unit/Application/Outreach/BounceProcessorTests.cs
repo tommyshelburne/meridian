@@ -76,7 +76,7 @@ public class BounceProcessorTests
     }
 
     [Fact]
-    public async Task Soft_bounce_only_audits_does_not_suppress()
+    public async Task First_two_soft_bounces_only_audit_and_increment_counter()
     {
         var contact = MakeContact();
         var enrollment = MakeActiveEnrollment(contact.Id);
@@ -88,13 +88,68 @@ public class BounceProcessorTests
         var processor = new BounceProcessor(fakes.Contacts, fakes.Outreach, fakes.Audit,
             NullLogger<BounceProcessor>.Instance);
 
-        var result = await processor.ProcessAsync(TenantId, new[] { SoftBounce(contact.Email!) }, CancellationToken.None);
+        var result = await processor.ProcessAsync(TenantId,
+            new[] { SoftBounce(contact.Email!), SoftBounce(contact.Email!) },
+            CancellationToken.None);
 
-        result.Value!.SoftBounces.Should().Be(1);
+        result.Value!.SoftBounces.Should().Be(2);
         result.Value.EnrollmentsStopped.Should().Be(0);
 
+        contact.SoftBounceCount.Should().Be(2);
         contact.IsBounced.Should().BeFalse();
         enrollment.Status.Should().Be(EnrollmentStatus.Active);
+        fakes.Outreach.Suppressions.Should().BeEmpty();
+        fakes.Audit.Events.Should().HaveCount(2)
+            .And.AllSatisfy(e => e.EventType.Should().Be("SoftBounce"));
+    }
+
+    [Fact]
+    public async Task Third_soft_bounce_escalates_to_hard_and_stops_enrollments()
+    {
+        var contact = MakeContact();
+        var enrollment = MakeActiveEnrollment(contact.Id);
+
+        var fakes = new Fakes();
+        fakes.Contacts.Seed(contact);
+        fakes.Outreach.SeedActiveEnrollment(enrollment);
+
+        var processor = new BounceProcessor(fakes.Contacts, fakes.Outreach, fakes.Audit,
+            NullLogger<BounceProcessor>.Instance);
+
+        var result = await processor.ProcessAsync(TenantId,
+            new[]
+            {
+                SoftBounce(contact.Email!),
+                SoftBounce(contact.Email!),
+                SoftBounce(contact.Email!)
+            },
+            CancellationToken.None);
+
+        result.Value!.SoftBounces.Should().Be(2);
+        result.Value.HardBounces.Should().Be(1);
+        result.Value.EnrollmentsStopped.Should().Be(1);
+
+        contact.SoftBounceCount.Should().Be(3);
+        contact.IsBounced.Should().BeTrue();
+        enrollment.Status.Should().Be(EnrollmentStatus.Bounced);
+        fakes.Outreach.Suppressions.Should().ContainSingle();
+
+        var auditTypes = fakes.Audit.Events.Select(e => e.EventType).ToList();
+        auditTypes.Should().Equal("SoftBounce", "SoftBounce", "SoftBounceEscalated");
+    }
+
+    [Fact]
+    public async Task Soft_bounce_for_unknown_contact_only_audits()
+    {
+        var fakes = new Fakes();
+        var processor = new BounceProcessor(fakes.Contacts, fakes.Outreach, fakes.Audit,
+            NullLogger<BounceProcessor>.Instance);
+
+        var result = await processor.ProcessAsync(TenantId,
+            new[] { SoftBounce("ghost@unknown.com") },
+            CancellationToken.None);
+
+        result.Value!.SoftBounces.Should().Be(1);
         fakes.Outreach.Suppressions.Should().BeEmpty();
         fakes.Audit.Events.Should().ContainSingle().Which.EventType.Should().Be("SoftBounce");
     }

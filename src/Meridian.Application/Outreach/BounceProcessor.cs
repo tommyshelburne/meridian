@@ -52,13 +52,31 @@ public class BounceProcessor
                 continue;
             }
 
-            // Soft bounces don't suppress immediately; spec section 5.1 says retry up to 3
-            // times. Tracking that retry count is out of scope for v3.0; for now we record
-            // the event in the audit log and let the enrollment continue.
+            // Soft bounces increment a counter on the contact; on the third one
+            // the contact is escalated to permanently bounced (spec section 5.1)
+            // and we suppress + stop enrollments just like a hard bounce.
             if (evt.Kind == BounceEventKind.SoftBounce)
             {
-                await AppendAuditAsync(tenantId, evt, "SoftBounce", ct);
-                summary.SoftBounces++;
+                var softContact = await _contacts.GetByEmailAsync(tenantId, evt.Email, ct);
+                var escalated = softContact?.RecordSoftBounce() ?? false;
+
+                if (escalated)
+                {
+                    await SuppressAsync(tenantId, evt.Email, BuildSuppressionReason(evt), ct);
+                    var enrollments = await _outreach.GetActiveEnrollmentsForContactAsync(tenantId, softContact!.Id, ct);
+                    foreach (var enrollment in enrollments)
+                    {
+                        enrollment.MarkBounced();
+                        summary.EnrollmentsStopped++;
+                    }
+                    summary.HardBounces++;
+                    await AppendAuditAsync(tenantId, evt, "SoftBounceEscalated", ct);
+                }
+                else
+                {
+                    await AppendAuditAsync(tenantId, evt, "SoftBounce", ct);
+                    summary.SoftBounces++;
+                }
                 continue;
             }
 
