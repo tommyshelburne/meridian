@@ -80,6 +80,47 @@ public class OpportunityQueueServiceTests
         });
     }
 
+    [Fact]
+    public async Task GetPipeline_buckets_results_into_three_columns()
+    {
+        var pursuing = NewScoredOpportunity(); pursuing.Pursue();
+        var partneringA = NewScoredOpportunity(); partneringA.Partner();
+        var partneringB = NewScoredOpportunity(); partneringB.Partner();
+        var watching = NewScoredOpportunity(); watching.Watch();
+        var rejected = NewScoredOpportunity(); rejected.Reject(); // shouldn't appear in pipeline
+
+        var repo = new MultiResultRepo(new[] { pursuing, partneringA, partneringB, watching });
+        var svc = new OpportunityQueueService(repo);
+
+        var snapshot = await svc.GetPipelineAsync(TenantId, CancellationToken.None);
+
+        snapshot.Pursuing.Should().ContainSingle().Which.Should().Be(pursuing);
+        snapshot.Partnering.Should().HaveCount(2);
+        snapshot.Watching.Should().ContainSingle().Which.Should().Be(watching);
+        repo.LastQueriedStatuses.Should().BeEquivalentTo(new[]
+        {
+            OpportunityStatus.Pursuing,
+            OpportunityStatus.Partnering,
+            OpportunityStatus.Watching
+        });
+    }
+
+    private class MultiResultRepo : IOpportunityRepository
+    {
+        private readonly IReadOnlyList<Opportunity> _results;
+        public IReadOnlyCollection<OpportunityStatus>? LastQueriedStatuses { get; private set; }
+        public MultiResultRepo(IReadOnlyList<Opportunity> results) => _results = results;
+        public Task<IReadOnlyList<Opportunity>> GetByStatusesAsync(Guid t, IReadOnlyCollection<OpportunityStatus> s, CancellationToken ct)
+        { LastQueriedStatuses = s; return Task.FromResult(_results); }
+        public Task<Opportunity?> GetByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<Opportunity?>(null);
+        public Task<Opportunity?> GetByExternalIdAsync(Guid t, string e, CancellationToken ct) => Task.FromResult<Opportunity?>(null);
+        public Task<Opportunity?> GetBySourceExternalIdAsync(Guid t, Guid s, string e, CancellationToken ct) => Task.FromResult<Opportunity?>(null);
+        public Task<IReadOnlyList<Opportunity>> GetByStatusAsync(Guid t, OpportunityStatus s, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
+        public Task<IReadOnlyList<Opportunity>> GetWatchedAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<Opportunity>>(Array.Empty<Opportunity>());
+        public Task AddAsync(Opportunity o, CancellationToken ct) => Task.CompletedTask;
+        public Task SaveChangesAsync(CancellationToken ct) => Task.CompletedTask;
+    }
+
     private class FakeRepo : IOpportunityRepository
     {
         private readonly Opportunity? _opp;
