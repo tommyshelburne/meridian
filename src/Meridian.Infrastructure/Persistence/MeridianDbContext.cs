@@ -41,6 +41,7 @@ public class MeridianDbContext : DbContext
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<OidcConfig> OidcConfigs => Set<OidcConfig>();
     public DbSet<SourceDefinition> SourceDefinitions => Set<SourceDefinition>();
+    public DbSet<OutboundConfiguration> OutboundConfigurations => Set<OutboundConfiguration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -63,5 +64,6 @@ public class MeridianDbContext : DbContext
         modelBuilder.Entity<RagMemory>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<SuppressionEntry>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<SourceDefinition>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
+        modelBuilder.Entity<OutboundConfiguration>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
     }
 }

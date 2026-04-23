@@ -47,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthTokenRepository, AuthTokenRepository>();
         services.AddScoped<IOidcConfigRepository, OidcConfigRepository>();
         services.AddScoped<ISourceDefinitionRepository, SourceDefinitionRepository>();
+        services.AddScoped<IOutboundConfigurationRepository, OutboundConfigurationRepository>();
 
         // Scoring — v2 rule-based engine
         var scoringConfig = new ScoringConfiguration();
@@ -87,6 +88,11 @@ public static class DependencyInjection
         // Ingestion orchestrator
         services.AddScoped<IngestionOrchestrator>();
         services.AddScoped<SourceManagementService>();
+
+        // Secret protection — wraps ASP.NET Core Data Protection so outbound provider
+        // API keys are never persisted in plaintext. The DI host (Worker / Portal)
+        // must register IDataProtectionProvider with persistent key storage.
+        services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
 
         // Outreach
         services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();
