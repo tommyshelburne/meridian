@@ -1,7 +1,6 @@
 using System.Net;
 using Meridian.Application.Common;
 using Meridian.Application.Ports;
-using Microsoft.Extensions.Options;
 
 namespace Meridian.Infrastructure.Outreach;
 
@@ -10,32 +9,35 @@ public class ComplianceFooterEmailSender : IEmailSender
     private const string FooterMarker = "<!--meridian-compliance-footer-->";
 
     private readonly IEmailSender _inner;
-    private readonly EmailComplianceOptions _options;
+    private readonly TenantOutboundContext _context;
 
-    public ComplianceFooterEmailSender(IEmailSender inner, IOptions<EmailComplianceOptions> options)
+    public ComplianceFooterEmailSender(IEmailSender inner, TenantOutboundContext context)
     {
         _inner = inner;
-        _options = options.Value;
+        _context = context;
     }
 
-    public Task<ServiceResult<SendResult>> SendAsync(EmailMessage message, CancellationToken ct)
+    public async Task<ServiceResult<SendResult>> SendAsync(EmailMessage message, CancellationToken ct)
     {
-        var withFooter = AppendFooter(message);
-        return _inner.SendAsync(withFooter, ct);
+        var settings = await _context.GetAsync(ct);
+        // No tenant config -> pass through; the downstream router will reject the send
+        // with NoConfigError so nothing actually goes out without a footer.
+        var prepared = settings is null ? message : AppendFooter(message, settings);
+        return await _inner.SendAsync(prepared, ct);
     }
 
-    private EmailMessage AppendFooter(EmailMessage message)
+    private static EmailMessage AppendFooter(EmailMessage message, TenantOutboundSettings settings)
     {
         if (message.BodyHtml.Contains(FooterMarker, StringComparison.Ordinal))
             return message;
 
-        var unsubscribeUrl = BuildUnsubscribeUrl(message.To);
+        var unsubscribeUrl = BuildUnsubscribeUrl(settings.UnsubscribeBaseUrl, message.To);
         var footer = $"""
 
             {FooterMarker}
             <hr style="border:none;border-top:1px solid #ccc;margin-top:24px;">
             <p style="color:#666;font-size:12px;line-height:1.4;margin-top:12px;">
-              {WebUtility.HtmlEncode(_options.PhysicalAddress)}<br>
+              {WebUtility.HtmlEncode(settings.PhysicalAddress)}<br>
               <a href="{unsubscribeUrl}">Unsubscribe</a> from future messages.
             </p>
             """;
@@ -43,9 +45,9 @@ public class ComplianceFooterEmailSender : IEmailSender
         return message with { BodyHtml = message.BodyHtml + footer };
     }
 
-    private string BuildUnsubscribeUrl(string recipient)
+    private static string BuildUnsubscribeUrl(string baseUrl, string recipient)
     {
-        var separator = _options.UnsubscribeBaseUrl.Contains('?') ? "&" : "?";
-        return $"{_options.UnsubscribeBaseUrl}{separator}email={WebUtility.UrlEncode(recipient)}";
+        var separator = baseUrl.Contains('?') ? "&" : "?";
+        return $"{baseUrl}{separator}email={WebUtility.UrlEncode(recipient)}";
     }
 }

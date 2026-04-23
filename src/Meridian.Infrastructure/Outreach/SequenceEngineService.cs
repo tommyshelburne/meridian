@@ -105,11 +105,12 @@ public class SequenceEngineService : ISequenceEngine
                 if (jitterMs > 0)
                     await Task.Delay(jitterMs, ct);
 
-                // Send — sender identity will be sourced from tenant outbound settings in a later phase
+                // Sender identity (From + DisplayName) is filled by TenantRoutedEmailSender
+                // from the tenant's OutboundConfiguration; pass empty placeholders here.
                 var message = new EmailMessage(
                     contact.Email,
-                    "outreach@meridian.local",
-                    "Meridian",
+                    string.Empty,
+                    string.Empty,
                     subjectResult.Value!,
                     bodyResult.Value!);
 

@@ -13,6 +13,7 @@ using Meridian.Infrastructure.Persistence;
 using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Application.Outreach;
 using Meridian.Infrastructure.Outreach;
+using Meridian.Infrastructure.Outreach.Resend;
 using Meridian.Infrastructure.Scoring;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -98,9 +99,10 @@ public static class DependencyInjection
         services.AddSingleton<ITemplateRenderer, LiquidTemplateRenderer>();
         services.AddSingleton<SendThrottleState>();
         services.Configure<SendThrottleOptions>(configuration.GetSection(SendThrottleOptions.SectionName));
-        services.Configure<EmailComplianceOptions>(configuration.GetSection(EmailComplianceOptions.SectionName));
+        services.Configure<ResendOptions>(configuration.GetSection(ResendOptions.SectionName));
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
         services.AddScoped<ReplyProcessor>();
+        services.AddScoped<TenantOutboundContext>();
 
         // Auth services
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
@@ -116,14 +118,21 @@ public static class DependencyInjection
         services.AddScoped<MembershipService>();
         services.AddScoped<TenantManagementService>();
 
-        // Email — decorator chain: Suppression -> Throttle -> ComplianceFooter -> base sender.
-        // Scoped because the suppression filter depends on per-request tenant context + repo.
+        // Email — decorator chain (outermost to innermost):
+        //   Suppression -> Throttle -> ComplianceFooter -> TenantRouted -> {Console|Resend}
+        // Scoped because suppression and routing depend on per-request tenant context.
         services.AddSingleton<ConsoleEmailSender>();
+        services.AddHttpClient<ResendEmailSender>();
         services.AddScoped<IEmailSender>(sp =>
         {
-            IEmailSender chain = sp.GetRequiredService<ConsoleEmailSender>();
+            var router = new TenantRoutedEmailSender(
+                sp.GetRequiredService<TenantOutboundContext>(),
+                sp.GetRequiredService<ConsoleEmailSender>(),
+                sp.GetRequiredService<ResendEmailSender>(),
+                sp.GetRequiredService<ILogger<TenantRoutedEmailSender>>());
+            IEmailSender chain = router;
             chain = new ComplianceFooterEmailSender(chain,
-                sp.GetRequiredService<IOptions<EmailComplianceOptions>>());
+                sp.GetRequiredService<TenantOutboundContext>());
             chain = new ThrottledEmailSender(chain,
                 sp.GetRequiredService<SendThrottleState>(),
                 sp.GetRequiredService<IOptions<SendThrottleOptions>>(),
