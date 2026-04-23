@@ -1,0 +1,81 @@
+@page "/app/{Slug}/settings/scoring"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Infrastructure.Scoring
+@inject ScoringConfiguration Config
+
+<PageTitle>Scoring rules · Meridian</PageTitle>
+
+<h1>Scoring rules</h1>
+<p class="page-lede">
+    The 8-dimension model the engine uses to score every opportunity. Maximum
+    <strong>14 points</strong>: <strong>Pursue ≥ @Config.PursueThreshold</strong>,
+    <strong>Partner ≥ @Config.PartnerThreshold</strong>, otherwise <strong>NoBid</strong>.
+</p>
+<p class="dev-note">
+    Read-only for now. Per-tenant editing of these keywords + thresholds is the next slice.
+</p>
+
+<section class="rule-section">
+    <h2>Dimensions</h2>
+    <table class="dim-table">
+        <thead><tr><th>Dimension</th><th>Max</th><th>How it scores</th></tr></thead>
+        <tbody>
+            <tr><td>Lane fit (title)</td><td>2</td><td>Title contains any lane keyword.</td></tr>
+            <tr><td>Lane fit (description)</td><td>1</td><td>Description contains any lane keyword.</td></tr>
+            <tr><td>Agency tier</td><td>2</td><td>Federal civilian/defense/prime = 2; tier-1 state = 2; other state/local = 1.</td></tr>
+            <tr><td>Win themes</td><td>2</td><td>+1 for any win-theme keyword. +1 for any legacy-incumbent keyword.</td></tr>
+            <tr><td>Past performance</td><td>2</td><td>NAICS code matches the past-performance list.</td></tr>
+            <tr><td>Procurement vehicle</td><td>2</td><td>GsaEbuy/Naspo/Ncpa/Sourcewell/StateCooperative = 2; GsaSchedule = 1; OpenMarket/Other = 0.</td></tr>
+            <tr><td>Seat count</td><td>2</td><td>Estimated seats ≥ 100 = 2; ≥ 50 = 1; otherwise 0.</td></tr>
+            <tr><td>Recompete</td><td>1</td><td>Title or description contains a recompete keyword.</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<section class="rule-section">
+    <h2>Keyword groups</h2>
+    <div class="kw-grid">
+        @{ KeywordCard("Lane keywords", "Match → lane fit (title 2pts / description 1pt)", Config.LaneKeywords); }
+        @{ KeywordCard("Win-theme keywords", "Match → +1 win themes", Config.WinThemeKeywords); }
+        @{ KeywordCard("Legacy incumbent keywords", "Match → +1 win themes", Config.LegacyIncumbentKeywords); }
+        @{ KeywordCard("Recompete keywords", "Match → +1 recompete + flag", Config.RecompeteKeywords); }
+        @{ KeywordCard("Past-performance NAICS", "Match → +2 past performance", Config.PastPerformanceNaicsCodes); }
+        @{ KeywordCard("Tier-1 states", "State-local agency in this list → tier 2 (else tier 1)", Config.Tier1States); }
+    </div>
+</section>
+
+<section class="rule-section">
+    <h2>Seat estimation</h2>
+    <dl class="kv">
+        <dt>Per-seat annual price</dt>
+        <dd>$@Config.PerSeatAnnualPrice.ToString("N2") <small>(used to infer seats from contract value)</small></dd>
+        <dt>Federal seat proxy</dt>
+        <dd>@Config.FederalSeatProxy.ToString("N0") seats <small>(when value ≥ $@Config.FederalSeatProxyMinValue.ToString("N0") and no explicit count)</small></dd>
+    </dl>
+    <p class="muted">
+        Estimation order: explicit regex match in title/description (high confidence) →
+        contract value ÷ per-seat annual price (medium) → federal seat proxy (low) → unknown.
+    </p>
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private RenderFragment KeywordCard(string title, string subtitle, IEnumerable<string> values) => __builder =>
+    {
+        <article class="kw-card">
+            <header>
+                <h3>@title</h3>
+                <span class="kw-count">@values.Count()</span>
+            </header>
+            <p class="kw-subtitle">@subtitle</p>
+            <ul class="chip-list">
+                @foreach (var v in values)
+                {
+                    <li class="chip">@v</li>
+                }
+            </ul>
+        </article>
+    };
+}
