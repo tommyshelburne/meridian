@@ -1,0 +1,191 @@
+@page "/app/{Slug}/opportunities/{OpportunityId:guid}"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Application.Opportunities
+@using Meridian.Domain.Common
+@using Meridian.Domain.Scoring
+
+<PageTitle>@(_detail?.Opportunity.Title ?? "Opportunity") · Meridian</PageTitle>
+
+@if (_detail is null)
+{
+    <p class="muted">Loading…</p>
+}
+else
+{
+    var opp = _detail.Opportunity;
+
+    <div class="opp-header">
+        <div class="opp-titlebar">
+            <h1>@opp.Title</h1>
+            <a class="back-link" href="/app/@Slug/opportunities">← back to queue</a>
+        </div>
+        <div class="opp-tagline">
+            <span class="score-pill">@opp.Score?.Total<span class="muted">/14</span></span>
+            <span class="verdict @(opp.Score?.Verdict.ToString().ToLowerInvariant())">@opp.Score?.Verdict</span>
+            <span class="status-pill">@opp.Status</span>
+            <span class="muted">@opp.Source · @opp.ExternalId</span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Saved))
+    {
+        <div class="auth-ok" role="status">Decision recorded.</div>
+    }
+
+    <form method="post" action="/app/@Slug/opportunities/decide" class="action-bar">
+        <AntiforgeryToken />
+        <input type="hidden" name="OpportunityId" value="@opp.Id" />
+        <button type="submit" name="Decision" value="Pursue" class="btn-pursue">Pursue</button>
+        <button type="submit" name="Decision" value="Partner" class="btn-partner">Partner</button>
+        <button type="submit" name="Decision" value="Watch" class="btn-watch">Watch</button>
+        <button type="submit" name="Decision" value="Reject" class="btn-reject">Reject</button>
+    </form>
+
+    <div class="grid">
+        <section class="panel">
+            <h2>Summary</h2>
+            <dl>
+                <dt>Agency</dt><dd>@opp.Agency.Name</dd>
+                <dt>Type</dt><dd>@opp.Agency.Type @(opp.Agency.State is null ? "" : $"· {opp.Agency.State}")</dd>
+                <dt>Posted</dt><dd>@opp.PostedDate.ToString("yyyy-MM-dd")</dd>
+                <dt>Response deadline</dt><dd>@(opp.ResponseDeadline?.ToString("yyyy-MM-dd") ?? "—")</dd>
+                <dt>NAICS</dt><dd>@(opp.NaicsCode ?? "—")</dd>
+                <dt>Procurement vehicle</dt><dd>@(opp.ProcurementVehicle?.ToString() ?? "—")</dd>
+                <dt>Estimated value</dt><dd>@(opp.EstimatedValue is { } v ? v.ToString("C0") : "—")</dd>
+                <dt>Seat estimate</dt>
+                <dd>
+                    @if (opp.EstimatedSeats is { } s)
+                    {
+                        <strong>@s.ToString("N0")</strong>
+                        <span class="muted">@opp.SeatEstimateConfidence confidence</span>
+                    }
+                    else { <span class="muted">unknown</span> }
+                </dd>
+            </dl>
+        </section>
+
+        <section class="panel">
+            <h2>Score breakdown</h2>
+            @if (opp.Score?.Breakdown is { } b)
+            {
+                <ul class="breakdown">
+                    @{ Row("Lane fit (title)", b.LaneTitle, 2); }
+                    @{ Row("Lane fit (description)", b.LaneDescription, 1); }
+                    @{ Row("Agency tier", b.AgencyTier, 2); }
+                    @{ Row("Win themes", b.WinThemes, 2); }
+                    @{ Row("Past performance", b.PastPerformance, 2); }
+                    @{ Row("Procurement vehicle", b.ProcurementVehicle, 2); }
+                    @{ Row("Seat count", b.SeatCount, 2); }
+                    @{ Row("Recompete", b.Recompete, 1); }
+                </ul>
+                @if (opp.Score.RecompeteDetected)
+                {
+                    <p class="recompete-note">Recompete keyword detected in title or description.</p>
+                }
+            }
+            else
+            {
+                <p class="muted">No score available.</p>
+            }
+        </section>
+    </div>
+
+    <section class="panel">
+        <h2>Description</h2>
+        @if (string.IsNullOrWhiteSpace(opp.Description))
+        {
+            <p class="muted">No description provided by the source.</p>
+        }
+        else
+        {
+            <pre class="description">@opp.Description</pre>
+        }
+    </section>
+
+    <section class="panel">
+        <h2>Contacts (@_detail.Contacts.Count)</h2>
+        @if (_detail.Contacts.Count == 0)
+        {
+            <p class="muted">
+                No contacts attached. Try the
+                <a href="/app/@Slug/enrichment">manual enrichment queue</a>.
+            </p>
+        }
+        else
+        {
+            <ul class="contact-list">
+                @foreach (var c in _detail.Contacts)
+                {
+                    <li class="contact-item">
+                        <div class="contact-name">
+                            <strong>@c.FullName</strong>
+                            @if (!string.IsNullOrEmpty(c.Title))
+                            {
+                                <span class="muted">@c.Title</span>
+                            }
+                        </div>
+                        <div class="contact-meta">
+                            @if (!string.IsNullOrEmpty(c.Email))
+                            {
+                                <a href="mailto:@c.Email">@c.Email</a>
+                            }
+                            <span class="confidence">@c.Source · @c.ConfidenceScore.ToString("0.00") confidence</span>
+                            @if (c.IsBounced) { <span class="badge-bad">bounced</span> }
+                            @if (c.IsOptedOut) { <span class="badge-bad">opted out</span> }
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="panel">
+        <h2>Activity</h2>
+        @if (_detail.RecentEvents.Count == 0)
+        {
+            <p class="muted">No audit events for this opportunity yet.</p>
+        }
+        else
+        {
+            <ol class="event-list">
+                @foreach (var evt in _detail.RecentEvents)
+                {
+                    <li class="event-item">
+                        <time>@evt.OccurredAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</time>
+                        <span class="event-type">@evt.EventType</span>
+                        <span class="event-actor muted">@evt.Actor</span>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [Parameter] public Guid OpportunityId { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private OpportunityDetailService DetailSvc { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private Meridian.Application.Opportunities.OpportunityDetail? _detail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _detail = await DetailSvc.GetAsync(tenantId, OpportunityId, CancellationToken.None);
+    }
+
+    private RenderFragment Row(string label, int score, int max) => __builder =>
+    {
+        var hit = score > 0;
+        <li class="@(hit ? "hit" : "miss")">
+            <span class="dim-label">@label</span>
+            <span class="dim-score">@score<span class="muted">/@max</span></span>
+        </li>
+    };
+}

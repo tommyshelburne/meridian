@@ -63,7 +63,7 @@ else
                                 <span class="score-pill">@opp.Score?.Total<span class="muted">/14</span></span>
                                 <span class="verdict @(opp.Score?.Verdict.ToString().ToLowerInvariant())">@opp.Score?.Verdict</span>
                             </div>
-                            <div class="card-title">@opp.Title</div>
+                            <a class="card-title" href="/app/@Slug/opportunities/@opp.Id">@opp.Title</a>
                             <div class="card-meta">
                                 <span>@opp.Agency.Name</span>
                                 @if (opp.Agency.State is not null)
