@@ -1,0 +1,90 @@
+@page "/app/{Slug}/pipeline"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Application.Opportunities
+@using Meridian.Domain.Common
+@using Meridian.Domain.Opportunities
+
+<PageTitle>Pipeline · Meridian</PageTitle>
+
+<h1>Pipeline</h1>
+<p class="page-lede">
+    Opportunities you've already triaged. Move between columns by re-deciding from the
+    <a href="/app/@Slug/opportunities">Opportunities</a> queue.
+</p>
+
+@if (_pipeline is null)
+{
+    <p class="muted">Loading…</p>
+}
+else
+{
+    <div class="board">
+        @{ RenderColumn("Pursuing", "pursuing", _pipeline.Pursuing); }
+        @{ RenderColumn("Partnering", "partnering", _pipeline.Partnering); }
+        @{ RenderColumn("Watching", "watching", _pipeline.Watching); }
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    [Inject] private OpportunityQueueService Queue { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private PipelineSnapshot? _pipeline;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _pipeline = await Queue.GetPipelineAsync(tenantId, CancellationToken.None);
+    }
+
+    private RenderFragment RenderColumn(string title, string kind, IReadOnlyList<Opportunity> items) => __builder =>
+    {
+        <section class="column @kind">
+            <header class="column-head">
+                <h2>@title</h2>
+                <span class="count">@items.Count</span>
+            </header>
+            @if (items.Count == 0)
+            {
+                <div class="column-empty">No opportunities in this column.</div>
+            }
+            else
+            {
+                <ul class="card-list">
+                    @foreach (var opp in items)
+                    {
+                        <li class="opp-card">
+                            <div class="card-head">
+                                <span class="score-pill">@opp.Score?.Total<span class="muted">/14</span></span>
+                                <span class="verdict @(opp.Score?.Verdict.ToString().ToLowerInvariant())">@opp.Score?.Verdict</span>
+                            </div>
+                            <div class="card-title">@opp.Title</div>
+                            <div class="card-meta">
+                                <span>@opp.Agency.Name</span>
+                                @if (opp.Agency.State is not null)
+                                {
+                                    <span class="muted">· @opp.Agency.State</span>
+                                }
+                            </div>
+                            <div class="card-foot">
+                                @if (opp.EstimatedSeats is { } seats)
+                                {
+                                    <span class="seats">@seats.ToString("N0") seats</span>
+                                }
+                                @if (opp.ResponseDeadline is { } deadline)
+                                {
+                                    <span class="deadline">due @deadline.ToString("MMM d")</span>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    };
+}
