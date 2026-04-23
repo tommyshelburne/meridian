@@ -7,6 +7,7 @@ public enum SourceAdapterType
     StatePortal,
     GenericRss,
     GenericRest,
+    GenericHtml,
     InboundWebhook,
     EmailInbox,
     CsvUpload

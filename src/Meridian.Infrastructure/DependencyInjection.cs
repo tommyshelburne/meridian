@@ -78,6 +78,8 @@ public static class DependencyInjection
         services.AddTransient<IOpportunitySourceAdapter, GenericRssAdapter>();
         services.AddHttpClient<GenericRestAdapter>();
         services.AddTransient<IOpportunitySourceAdapter, GenericRestAdapter>();
+        services.AddHttpClient<GenericHtmlAdapter>();
+        services.AddTransient<IOpportunitySourceAdapter, GenericHtmlAdapter>();
         services.AddSingleton<IWebhookIngestQueue, InMemoryWebhookIngestQueue>();
         services.AddTransient<IOpportunitySourceAdapter, InboundWebhookAdapter>();
 
