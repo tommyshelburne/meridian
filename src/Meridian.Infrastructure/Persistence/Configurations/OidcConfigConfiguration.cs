@@ -17,7 +17,7 @@ public class OidcConfigConfiguration : IEntityTypeConfiguration<OidcConfig>
         builder.Property(c => c.DisplayName).HasColumnName("display_name").HasMaxLength(200).IsRequired();
         builder.Property(c => c.Authority).HasColumnName("authority").HasMaxLength(500).IsRequired();
         builder.Property(c => c.ClientId).HasColumnName("client_id").HasMaxLength(300).IsRequired();
-        builder.Property(c => c.ClientSecret).HasColumnName("client_secret").HasMaxLength(2000).IsRequired();
+        builder.Property(c => c.EncryptedClientSecret).HasColumnName("client_secret").HasMaxLength(2000).IsRequired();
         builder.Property(c => c.Scopes).HasColumnName("scopes").HasMaxLength(500);
         builder.Property(c => c.EmailClaim).HasColumnName("email_claim").HasMaxLength(100);
         builder.Property(c => c.NameClaim).HasColumnName("name_claim").HasMaxLength(100);

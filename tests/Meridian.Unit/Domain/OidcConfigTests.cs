@@ -54,7 +54,7 @@ public class OidcConfigTests
 
         config.RotateSecret("secret2");
 
-        config.ClientSecret.Should().Be("secret2");
+        config.EncryptedClientSecret.Should().Be("secret2");
         config.UpdatedAt.Should().BeAfter(originalUpdated);
     }
 

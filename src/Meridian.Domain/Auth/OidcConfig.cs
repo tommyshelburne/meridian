@@ -11,7 +11,7 @@ public class OidcConfig
     public string DisplayName { get; private set; } = null!;
     public string Authority { get; private set; } = null!;
     public string ClientId { get; private set; } = null!;
-    public string ClientSecret { get; private set; } = null!;
+    public string EncryptedClientSecret { get; private set; } = null!;
     public string Scopes { get; private set; } = DefaultScopes;
     public string EmailClaim { get; private set; } = "email";
     public string NameClaim { get; private set; } = "name";
@@ -28,7 +28,7 @@ public class OidcConfig
         string displayName,
         string authority,
         string clientId,
-        string clientSecret,
+        string encryptedClientSecret,
         string? scopes = null,
         string? emailClaim = null,
         string? nameClaim = null)
@@ -38,7 +38,7 @@ public class OidcConfig
         RequireNotBlank(displayName, nameof(displayName));
         RequireValidAuthority(authority);
         RequireNotBlank(clientId, nameof(clientId));
-        RequireNotBlank(clientSecret, nameof(clientSecret));
+        RequireNotBlank(encryptedClientSecret, nameof(encryptedClientSecret));
 
         var now = DateTimeOffset.UtcNow;
         return new OidcConfig
@@ -50,7 +50,7 @@ public class OidcConfig
             DisplayName = displayName.Trim(),
             Authority = authority.Trim().TrimEnd('/'),
             ClientId = clientId.Trim(),
-            ClientSecret = clientSecret,
+            EncryptedClientSecret = encryptedClientSecret,
             Scopes = string.IsNullOrWhiteSpace(scopes) ? DefaultScopes : scopes.Trim(),
             EmailClaim = string.IsNullOrWhiteSpace(emailClaim) ? "email" : emailClaim!.Trim(),
             NameClaim = string.IsNullOrWhiteSpace(nameClaim) ? "name" : nameClaim!.Trim(),
@@ -76,10 +76,10 @@ public class OidcConfig
         Touch();
     }
 
-    public void RotateSecret(string newSecret)
+    public void RotateSecret(string newEncryptedSecret)
     {
-        RequireNotBlank(newSecret, nameof(newSecret));
-        ClientSecret = newSecret;
+        RequireNotBlank(newEncryptedSecret, nameof(newEncryptedSecret));
+        EncryptedClientSecret = newEncryptedSecret;
         Touch();
     }
 

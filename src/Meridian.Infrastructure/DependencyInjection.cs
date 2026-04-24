@@ -132,6 +132,7 @@ public static class DependencyInjection
         services.AddScoped<AuthService>();
         services.AddScoped<MembershipService>();
         services.AddScoped<TenantManagementService>();
+        services.AddScoped<OidcConfigService>();
 
         // Email — decorator chain (outermost to innermost):
         //   Suppression -> Throttle -> ComplianceFooter -> TenantRouted -> {Console|Resend}
