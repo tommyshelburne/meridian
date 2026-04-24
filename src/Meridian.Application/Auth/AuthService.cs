@@ -125,6 +125,63 @@ public class AuthService
         return new LoginResult(LoginOutcome.Success, user.Id, user.Email, user.FullName, memberships);
     }
 
+    // Called by the OIDC callback flow after the IdP has verified the user's identity.
+    // Trusts the email + name claims as authoritative — the IdP wouldn't have issued
+    // the token without authenticating the user. Auto-provisions a User row and an
+    // active UserTenant membership when missing, since the tenant admin granted access
+    // by configuring this OIDC provider for their workspace in the first place.
+    public async Task<LoginResult> SignInWithOidcAsync(
+        Guid tenantId, string email, string? fullName, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return LoginResult.Fail(LoginOutcome.InvalidCredentials);
+
+        var tenant = await _tenants.GetByIdAsync(tenantId, ct);
+        if (tenant is null || tenant.Status == TenantStatus.Suspended)
+            return LoginResult.Fail(LoginOutcome.NoActiveMembership);
+
+        var user = await _users.GetByEmailAsync(email, ct);
+        if (user is null)
+        {
+            try
+            {
+                user = User.CreateOidcOnly(
+                    email, string.IsNullOrWhiteSpace(fullName) ? email : fullName);
+            }
+            catch (ArgumentException)
+            {
+                return LoginResult.Fail(LoginOutcome.InvalidCredentials);
+            }
+            await _users.AddAsync(user, ct);
+        }
+
+        if (user.Status == UserStatus.Disabled)
+            return LoginResult.Fail(LoginOutcome.Disabled);
+
+        var membership = await _memberships.GetAsync(user.Id, tenantId, ct);
+        if (membership is null)
+        {
+            membership = UserTenant.CreateActive(user.Id, tenantId, UserRole.Operator);
+            await _memberships.AddAsync(membership, ct);
+        }
+        else if (membership.Status == MembershipStatus.Pending)
+        {
+            membership.Accept();
+        }
+        else if (membership.Status == MembershipStatus.Removed)
+        {
+            return LoginResult.Fail(LoginOutcome.NoActiveMembership);
+        }
+
+        user.RecordSuccessfulLogin();
+        await _users.SaveChangesAsync(ct);
+
+        var loginMembership = new LoginTenantMembership(
+            tenantId, tenant.Slug, tenant.Name, membership.Role);
+        return new LoginResult(LoginOutcome.Success, user.Id, user.Email, user.FullName,
+            new[] { loginMembership });
+    }
+
     public async Task<ServiceResult> VerifyEmailAsync(string rawToken, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(rawToken))

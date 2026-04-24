@@ -29,6 +29,17 @@ public class UserTenant
         return Create(userId, tenantId, role, invitedByUserId);
     }
 
+    // Used by OIDC auto-provisioning: when a user signs in via a tenant's configured
+    // IdP for the first time, we trust the IdP's authorization and create them as an
+    // already-active member rather than a pending invite.
+    public static UserTenant CreateActive(Guid userId, Guid tenantId, UserRole role)
+    {
+        var m = Create(userId, tenantId, role, invitedBy: null);
+        m.Status = MembershipStatus.Active;
+        m.AcceptedAt = m.InvitedAt;
+        return m;
+    }
+
     public void Accept()
     {
         if (Status != MembershipStatus.Pending)

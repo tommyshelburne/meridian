@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using Meridian.Application.Auth;
+using Meridian.Domain.Tenants;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.Options;
@@ -51,5 +53,49 @@ public class OidcOptionsConfigurer : IPostConfigureOptions<OpenIdConnectOptions>
             options.Scope.Add(scopeName);
 
         options.TokenValidationParameters.NameClaimType = config.NameClaim;
+
+        // Convert the OIDC ticket into Meridian's cookie-shaped principal. After
+        // OnTokenValidated runs, the framework signs in to the cookie scheme using
+        // ctx.Principal, so replacing it here is what persists our claims (UserId,
+        // TenantId, TenantSlug, Role) for the rest of the session.
+        var emailClaim = config.EmailClaim;
+        var nameClaim = config.NameClaim;
+        var capturedTenantId = tenantId;
+        options.Events = new OpenIdConnectEvents
+        {
+            OnTokenValidated = async ctx =>
+            {
+                var email = ctx.Principal?.FindFirst(emailClaim)?.Value
+                            ?? ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value
+                            ?? ctx.Principal?.FindFirst("preferred_username")?.Value;
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    ctx.Fail("OIDC token missing email claim.");
+                    return;
+                }
+
+                var displayName = ctx.Principal?.FindFirst(nameClaim)?.Value
+                                  ?? ctx.Principal?.FindFirst(ClaimTypes.Name)?.Value
+                                  ?? email;
+
+                var sp = ctx.HttpContext.RequestServices;
+                var authService = sp.GetRequiredService<AuthService>();
+                var tenantContext = sp.GetRequiredService<ITenantContext>();
+
+                var result = await authService.SignInWithOidcAsync(
+                    capturedTenantId, email, displayName, ctx.HttpContext.RequestAborted);
+                if (!result.IsSuccess || result.Memberships.Count == 0)
+                {
+                    ctx.Fail($"SSO sign-in rejected: {result.Outcome}.");
+                    return;
+                }
+
+                var membership = result.Memberships[0];
+                tenantContext.SetTenant(membership.TenantId);
+                ctx.Principal = ClaimsBuilder.Build(result, membership);
+                ctx.Properties!.RedirectUri = $"/app/{membership.TenantSlug}";
+            }
+        };
     }
 }

@@ -1,5 +1,7 @@
 using Meridian.Application.Auth;
+using Meridian.Application.Ports;
 using Meridian.Domain.Tenants;
+using Meridian.Portal.Auth.Oidc;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -73,6 +75,36 @@ public static class AuthEndpoints
             return result.IsSuccess
                 ? Results.Redirect("/login?reset=1")
                 : Results.Redirect($"/reset-password?token={Uri.EscapeDataString(form.Token)}&error={Uri.EscapeDataString(result.Error!)}");
+        });
+
+        // OIDC challenge: /auth/oidc/{providerKey}/challenge?tenant={slug}.
+        // Resolves the tenant by slug, looks up the OidcConfig for that tenant +
+        // providerKey, and triggers an OIDC challenge against the dynamically-
+        // manufactured scheme. The OIDC handler's CallbackPath is set per-options to
+        // /auth/oidc/{providerKey}/callback — that path is intercepted by the handler
+        // itself before it reaches any endpoint, so no callback endpoint is mapped here.
+        group.MapGet("/oidc/{providerKey}/challenge", async (
+            string providerKey,
+            [FromQuery] string tenant,
+            HttpContext http,
+            ITenantRepository tenants,
+            IOidcConfigRepository configs,
+            CancellationToken ct) =>
+        {
+            if (string.IsNullOrWhiteSpace(tenant))
+                return Results.Redirect("/login?error=missing-tenant");
+
+            var resolved = await tenants.GetBySlugAsync(tenant, ct);
+            if (resolved is null)
+                return Results.Redirect("/login?error=unknown-tenant");
+
+            var config = await configs.GetByProviderKeyAsync(resolved.Id, providerKey, ct);
+            if (config is null || !config.IsEnabled)
+                return Results.Redirect($"/login?tenant={Uri.EscapeDataString(tenant)}&error=sso-not-configured");
+
+            var schemeName = OidcSchemeNames.Format(resolved.Id, providerKey);
+            var props = new AuthenticationProperties { RedirectUri = $"/app/{resolved.Slug}" };
+            return Results.Challenge(props, new[] { schemeName });
         });
 
         return app;
