@@ -1,13 +1,18 @@
 using Meridian.Infrastructure;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Portal.Auth;
+using Meridian.Portal.Auth.Oidc;
 using Meridian.Portal.Components;
 using Meridian.Portal.Ingestion;
 using Meridian.Portal.Opportunities;
 using Meridian.Portal.Outreach;
 using Meridian.Portal.Sources;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +21,11 @@ var connectionString = builder.Configuration.GetConnectionString("Meridian")
 
 builder.Services.AddMeridianInfrastructure(connectionString, builder.Configuration);
 builder.Services.AddDataProtection();
+
+// Register the OIDC PostConfigureOptions BEFORE AddOpenIdConnect so it runs before
+// the framework's validating PostConfigureOptions (which throws if Authority/ClientId
+// are missing). Service collection iteration honors registration order.
+builder.Services.AddSingleton<IPostConfigureOptions<OpenIdConnectOptions>, OidcOptionsConfigurer>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -29,7 +39,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/not-found";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
-    });
+    })
+    // Template registration: hooks up OpenIdConnectHandler + the framework's options
+    // configurers. The "__oidc-template" scheme is never used directly — real schemes
+    // are manufactured per-tenant by DynamicOidcSchemeProvider with names of the form
+    // "oidc:{tenantId}:{providerKey}".
+    .AddOpenIdConnect("__oidc-template", _ => { });
+
+builder.Services.Replace(ServiceDescriptor.Singleton<IAuthenticationSchemeProvider, DynamicOidcSchemeProvider>());
 
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
