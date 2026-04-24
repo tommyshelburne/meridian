@@ -43,8 +43,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     // Template registration: hooks up OpenIdConnectHandler + the framework's options
     // configurers. The "__oidc-template" scheme is never used directly — real schemes
     // are manufactured per-tenant by DynamicOidcSchemeProvider with names of the form
-    // "oidc:{tenantId}:{providerKey}".
-    .AddOpenIdConnect("__oidc-template", _ => { });
+    // "oidc:{tenantId}:{providerKey}". Placeholder Authority/ClientId/ClientSecret are
+    // here only so the framework's validating PostConfigure doesn't throw at startup
+    // when it iterates registered schemes.
+    .AddOpenIdConnect("__oidc-template", options =>
+    {
+        options.Authority = "https://placeholder.invalid";
+        options.ClientId = "__placeholder";
+        options.ClientSecret = "__placeholder";
+    });
 
 builder.Services.Replace(ServiceDescriptor.Singleton<IAuthenticationSchemeProvider, DynamicOidcSchemeProvider>());
 

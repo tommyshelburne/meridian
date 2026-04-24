@@ -85,7 +85,7 @@ public static class AuthEndpoints
         // itself before it reaches any endpoint, so no callback endpoint is mapped here.
         group.MapGet("/oidc/{providerKey}/challenge", async (
             string providerKey,
-            [FromQuery] string tenant,
+            [FromQuery] string? tenant,
             HttpContext http,
             ITenantRepository tenants,
             IOidcConfigRepository configs,
