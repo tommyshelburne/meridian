@@ -17,6 +17,7 @@ secrets.json
 .vscode/
 .idea/
 *.swp
+.claude/settings.local.json
 
 ## macOS
 .DS_Store
