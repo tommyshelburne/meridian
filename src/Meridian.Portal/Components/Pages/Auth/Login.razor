@@ -1,10 +1,12 @@
 @page "/login"
 @layout PublicLayout
+@using Meridian.Application.Auth
+@using Meridian.Application.Ports
 
 <PageTitle>Sign in · Meridian</PageTitle>
 
 <section class="auth-card">
-    <h1>Sign in</h1>
+    <h1>Sign in@(_ssoTenantName is not null ? $" to {_ssoTenantName}" : "")</h1>
 
     @if (TwoFactor)
     {
@@ -19,6 +21,19 @@
     @if (Reset == "1")
     {
         <div class="auth-ok" role="status">Password updated. Sign in with your new password.</div>
+    }
+
+    @if (_ssoConfigs is { Count: > 0 } && !TwoFactor)
+    {
+        <div class="sso-list">
+            @foreach (var config in _ssoConfigs)
+            {
+                <a class="sso-button" href="/auth/oidc/@config.ProviderKey/challenge?tenant=@Tenant">
+                    Sign in with @config.DisplayName
+                </a>
+            }
+        </div>
+        <div class="sso-divider"><span>or use email + password</span></div>
     }
 
     <form method="post" action="/auth/login">
@@ -52,8 +67,26 @@
     [SupplyParameterFromQuery] public string? Error { get; set; }
     [SupplyParameterFromQuery(Name = "twofactor")] public string? TwoFactorFlag { get; set; }
     [SupplyParameterFromQuery] public string? Reset { get; set; }
+    [SupplyParameterFromQuery] public string? Tenant { get; set; }
+
+    [Inject] private ITenantRepository Tenants { get; set; } = default!;
+    [Inject] private OidcConfigService OidcConfigs { get; set; } = default!;
 
     private bool TwoFactor => TwoFactorFlag == "1";
+    private IReadOnlyList<OidcConfigSummary>? _ssoConfigs;
+    private string? _ssoTenantName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Tenant)) return;
+
+        var tenant = await Tenants.GetBySlugAsync(Tenant, CancellationToken.None);
+        if (tenant is null) return;
+
+        _ssoTenantName = tenant.Name;
+        var all = await OidcConfigs.ListForTenantAsync(tenant.Id, CancellationToken.None);
+        _ssoConfigs = all.Where(c => c.IsEnabled).ToList();
+    }
 
     private string ErrorMessage() => Error switch
     {
@@ -62,6 +95,20 @@
         "disabled" => "This account is disabled. Contact your workspace owner.",
         "no-workspace" => "No active workspace found for this account.",
         "invalid-code" => "That code wasn't valid. Try again.",
+        "missing-tenant" => "Workspace required for SSO sign-in.",
+        "unknown-tenant" => "That workspace doesn't exist.",
+        "sso-not-configured" => "No SSO provider is configured for that workspace.",
         _ => "Email or password is incorrect."
     };
 }
+
+<style>
+    .sso-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+    .sso-button { display: block; padding: 0.7rem 1rem; background: white; color: #2a3552;
+        border: 1px solid #cfd3e0; border-radius: 6px; text-align: center; text-decoration: none;
+        font-weight: 600; }
+    .sso-button:hover { background: #f5f7fb; }
+    .sso-divider { display: flex; align-items: center; gap: 0.75rem; color: #8a8e9f;
+        font-size: 0.85rem; margin: 1.25rem 0; }
+    .sso-divider::before, .sso-divider::after { content: ""; flex: 1; height: 1px; background: #e3e6ef; }
+</style>
