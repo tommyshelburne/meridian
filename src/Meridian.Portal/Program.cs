@@ -81,6 +81,7 @@ app.UseAuthorization();
 app.UseMiddleware<TenantClaimMiddleware>();
 
 app.MapAuthEndpoints();
+app.MapSsoSettingsEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();
 app.MapResendWebhookEndpoints();

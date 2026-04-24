@@ -27,6 +27,12 @@
     </form>
 </section>
 
+<section class="settings-section">
+    <h2>Single sign-on</h2>
+    <p>Configure OIDC providers (Entra, Okta, Google Workspace, Auth0) for this workspace.</p>
+    <a href="/app/@Slug/settings/sso">Manage SSO providers →</a>
+</section>
+
 @code {
     [Parameter] public string Slug { get; set; } = "";
     [SupplyParameterFromQuery] public string? Error { get; set; }

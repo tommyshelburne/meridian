@@ -1,0 +1,210 @@
+@page "/app/{Slug}/settings/sso"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+@using Meridian.Application.Auth
+@using Meridian.Domain.Auth
+
+<PageTitle>SSO · Meridian</PageTitle>
+
+<h1>Single sign-on (OIDC)</h1>
+<p class="page-lede">
+    Connect a corporate identity provider (Entra ID, Okta, Google Workspace, Auth0,
+    or any OIDC-compliant IdP). Users who authenticate via a configured provider
+    are auto-provisioned as Operators on first sign-in.
+</p>
+<p class="page-warn">
+    Changes take effect on the next portal restart — the auth pipeline caches OIDC
+    options per scheme name.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Saved.</div>
+}
+
+<section class="settings-section">
+    <h2>Configured providers</h2>
+    @if (_configs is null)
+    {
+        <p>Loading…</p>
+    }
+    else if (_configs.Count == 0)
+    {
+        <p class="meta">No providers configured yet. Add one below.</p>
+    }
+    else
+    {
+        <table class="config-table">
+            <thead>
+                <tr>
+                    <th>Provider</th>
+                    <th>Key</th>
+                    <th>Display name</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in _configs)
+                {
+                    <tr>
+                        <td>@c.Provider</td>
+                        <td><code>@c.ProviderKey</code></td>
+                        <td>@c.DisplayName</td>
+                        <td>@(c.IsEnabled ? "Enabled" : "Disabled")</td>
+                        <td>@c.UpdatedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                        <td class="actions">
+                            <a class="link" href="/auth/oidc/@c.ProviderKey/challenge?tenant=@Slug">Test</a>
+                            @if (c.IsEnabled)
+                            {
+                                <form method="post" action="/app/@Slug/settings/sso/@c.Id/disable" class="inline-form">
+                                    <button type="submit" class="link">Disable</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" action="/app/@Slug/settings/sso/@c.Id/enable" class="inline-form">
+                                    <button type="submit" class="link">Enable</button>
+                                </form>
+                            }
+                            <form method="post" action="/app/@Slug/settings/sso/@c.Id/delete" class="inline-form"
+                                  onsubmit="return confirm('Delete @c.DisplayName? Users will lose SSO access.')">
+                                <button type="submit" class="link danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr class="rotate-row">
+                        <td colspan="6">
+                            <form method="post" action="/app/@Slug/settings/sso/@c.Id/rotate-secret" class="inline-form">
+                                <label>Rotate secret
+                                    <input type="password" name="newSecret" autocomplete="new-password"
+                                           placeholder="paste new client secret" required />
+                                </label>
+                                <button type="submit">Rotate</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+<section class="settings-section">
+    <h2>Add a provider</h2>
+    <form method="post" action="/app/@Slug/settings/sso/create">
+        <div class="row two-col">
+            <label>Provider type
+                <select name="Provider">
+                    <option value="@OidcProvider.EntraId">Entra ID (Microsoft)</option>
+                    <option value="@OidcProvider.GoogleWorkspace">Google Workspace</option>
+                    <option value="@OidcProvider.Okta">Okta</option>
+                    <option value="@OidcProvider.Auth0">Auth0</option>
+                    <option value="@OidcProvider.Generic">Generic OIDC</option>
+                </select>
+            </label>
+            <label>Provider key (used in callback URL)
+                <input type="text" name="ProviderKey" required pattern="[a-zA-Z0-9_-]+"
+                       placeholder="entra-prod" />
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Display name (shown on login button)
+                <input type="text" name="DisplayName" required placeholder="Sign in with Entra" />
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Authority URL
+                <input type="url" name="Authority" required
+                       placeholder="https://login.microsoftonline.com/{tenant-id}/v2.0" />
+                <small>OIDC discovery endpoint root. The handler appends /.well-known/openid-configuration.</small>
+            </label>
+        </div>
+
+        <div class="row two-col">
+            <label>Client ID
+                <input type="text" name="ClientId" required />
+            </label>
+            <label>Client secret
+                <input type="password" name="ClientSecret" autocomplete="new-password" required />
+            </label>
+        </div>
+
+        <div class="row">
+            <label>Scopes (space-separated)
+                <input type="text" name="Scopes" placeholder="openid profile email" />
+                <small>Defaults to <code>openid profile email</code> if blank.</small>
+            </label>
+        </div>
+
+        <div class="row two-col">
+            <label>Email claim
+                <input type="text" name="EmailClaim" placeholder="email" />
+            </label>
+            <label>Name claim
+                <input type="text" name="NameClaim" placeholder="name" />
+            </label>
+        </div>
+
+        <button type="submit">Add provider</button>
+    </form>
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private OidcConfigService Service { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<OidcConfigSummary>? _configs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _configs = await Service.ListForTenantAsync(tenantId, CancellationToken.None);
+    }
+}
+
+<style>
+    .page-lede { color: #4a4f63; max-width: 60ch; }
+    .page-warn { padding: 0.6rem 0.85rem; background: #fef6e0; border: 1px solid #f0d57a;
+                 color: #7a5a14; border-radius: 6px; max-width: 60ch; font-size: 0.9rem; }
+    .settings-section { background: white; border: 1px solid #e3e6ef; border-radius: 10px;
+                        padding: 1.5rem; margin-top: 1rem; }
+    .settings-section h2 { margin: 0 0 1rem; font-size: 1rem; }
+    .settings-section .row { margin-bottom: 0.85rem; }
+    .settings-section .row.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+    .settings-section label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .settings-section input, .settings-section select { padding: 0.55rem 0.7rem;
+        border: 1px solid #cfd3e0; border-radius: 6px; font: inherit; }
+    .settings-section small { color: #6a6e82; font-size: 0.8rem; }
+    .settings-section button[type="submit"] { padding: 0.55rem 1rem; background: #2a3552; color: white;
+        border: none; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+    .config-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .config-table th, .config-table td { padding: 0.5rem 0.65rem; border-bottom: 1px solid #eef0f5;
+        text-align: left; vertical-align: middle; }
+    .config-table th { font-weight: 600; color: #6a6e82; font-size: 0.8rem; text-transform: uppercase; }
+    .config-table .rotate-row td { background: #fafbff; padding: 0.4rem 0.65rem 0.6rem; }
+    .config-table .actions { display: flex; gap: 0.5rem; align-items: center; }
+    .inline-form { display: inline-flex; gap: 0.5rem; align-items: center; margin: 0; padding: 0; }
+    button.link { background: none; border: none; padding: 0; color: #2a3552;
+        text-decoration: underline; cursor: pointer; font: inherit; }
+    button.link.danger { color: #b14040; }
+    a.link { color: #2a3552; text-decoration: underline; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3;
+        color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3;
+        color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+    code { background: #f1f3f9; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+</style>
