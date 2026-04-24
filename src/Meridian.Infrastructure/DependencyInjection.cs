@@ -7,6 +7,7 @@ using Meridian.Application.Ingestion;
 using Meridian.Application.Sources;
 using Meridian.Infrastructure.Ingestion;
 using Meridian.Infrastructure.Ingestion.Generic;
+using Meridian.Infrastructure.Ingestion.MyBidMatch;
 using Meridian.Infrastructure.Ingestion.SamGov;
 using Meridian.Infrastructure.Ingestion.UsaSpending;
 using Meridian.Infrastructure.Persistence;
@@ -77,6 +78,10 @@ public static class DependencyInjection
         services.AddTransient<IOpportunitySourceAdapter, UsaSpendingClient>();
         services.AddHttpClient<UsaSpendingPocEnricher>();
         services.AddTransient<IPocEnricher, UsaSpendingPocEnricher>();
+
+        // MyBidMatch — Utah state procurement aggregator (subscription-based)
+        services.AddHttpClient<MyBidMatchAdapter>();
+        services.AddTransient<IOpportunitySourceAdapter, MyBidMatchAdapter>();
 
         // Generic adapters (tenant-configurable)
         services.AddHttpClient<GenericRssAdapter>();
