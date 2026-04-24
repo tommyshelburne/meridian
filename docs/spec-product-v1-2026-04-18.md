@@ -34,7 +34,7 @@ Meridian is **company-agnostic IP**. No hardcoded industries, CRMs, email provid
 Meridian inherits its domain model, application ports, persistence layer, sequence engine, Liquid template renderer, SAM.gov adapter, and worker scaffolding from the internal v3 build (commits `b46eb79`..`728db3f`, 50 passing unit tests). The v3 scaffold is the foundation; v1.0 productization is a pivot in scope and surface area, not a rewrite.
 
 Tenant-agnostic generalizations required:
-- Remove all KomBea-specific scoring (seat-count, Nuance recompete, prime-contractor list)
+- Remove legacy tenant-specific scoring (seat-count heuristics, hardcoded recompete detection, prime-contractor allow-list)
 - Promote CRM adapter layer and multi-tenancy to day-one features (both were deferred in v3)
 - Replace Entra-only auth with generic OIDC + local credentials
 - Replace Graph-only sending with pluggable email provider layer
@@ -146,7 +146,7 @@ Meridian.sln
 
 Changes from v3:
 - `LaneConfiguration` → `MarketProfile`
-- `Opportunity.EstimatedSeats` removed (KomBea-specific); replaced with generic `Opportunity.EstimatedValue` + `Opportunity.DerivedMetrics` (JSON, tenant-rule outputs)
+- `Opportunity.EstimatedSeats` removed (legacy tenant-specific); replaced with generic `Opportunity.EstimatedValue` + `Opportunity.DerivedMetrics` (JSON, tenant-rule outputs)
 - `Tenant.SendingIdentity` → `Tenant.EmailProviderConfig` (typed discriminated union)
 - New: `SourceDefinition`, `SourceAdapterType`, `CrmConnection`, `EmailProviderConfig`, `ScoringRule`, `OidcConfig`
 
@@ -570,9 +570,9 @@ Per-tenant health metrics surfaced in portal:
 **Delete / generalize:**
 - `SeatCountEstimate`, `EstimatedSeats`, seat-count scoring logic
 - Prime-contractor target list
-- Nuance recompete detection (replace with generic regex-rule recompete detection)
-- `outreach@kombea.com` references
-- KomBea-tenant bootstrap seed data (move to example-only appendix)
+- Hardcoded recompete detection (replace with generic regex-rule recompete detection)
+- Tenant-specific hardcoded sending addresses
+- Internal-tenant bootstrap seed data (move to example-only appendix)
 
 **Rename:**
 - `LaneConfiguration` → `MarketProfile`
@@ -602,7 +602,7 @@ Per-tenant health metrics surfaced in portal:
 **Deferred — Google CASA Tier 2 assessment for Gmail OAuth.** Not v1.0. Kicked off ~6 weeks before v1.1 GA. Saves ~$15–25K/yr and de-risks the v1.0 timeline. Google Workspace users in v1.0 use SMTP + app password.
 
 **Phase 1 — Multi-tenant foundation (Weeks 1-2)**
-- Strip KomBea-isms, rename, migrate schema
+- Strip legacy tenant-specific code, rename, migrate schema
 - Auth (local + OIDC) with role system
 - Tenant provisioning API
 - Row-level tenancy filters everywhere, verified by integration tests
@@ -692,7 +692,7 @@ Per-tenant health metrics surfaced in portal:
 
 ## 11. Appendix — Example Tenants
 
-### 11.1 "Acme Contact Center" (illustrative, based on former KomBea internal scope)
+### 11.1 "Acme Contact Center" (illustrative)
 
 - **Market Profile:** Federal + state contact center services
 - **NAICS:** 561422, 541990, 541512

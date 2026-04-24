@@ -84,7 +84,6 @@ Live third-party smoke tests (e.g. `MyBidMatchLiveSmokeTests`) are skipped by de
 
 - [`docs/spec-product-v1-2026-04-18.md`](docs/spec-product-v1-2026-04-18.md) — current product spec (scope, domain model, adapter contracts, roadmap)
 - [`docs/portal-spec-v1-2026-04-19.md`](docs/portal-spec-v1-2026-04-19.md) — current portal UX spec
-- `docs/spec-v3-2026-04-14.md`, `docs/portal-spec-2026-04-14.md` — superseded, retained for historical context
 
 ## License
 

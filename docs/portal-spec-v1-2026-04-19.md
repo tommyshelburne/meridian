@@ -3,7 +3,7 @@
 **Date:** 2026-04-19
 **Author:** Tommy Shelburne
 **Status:** Drafting — aligned with `spec-product-v1-2026-04-18.md`
-**Supersedes:** `portal-spec-2026-04-14.md` (KomBea-internal scope; now obsolete)
+**Supersedes:** prior internal-scope draft (now obsolete)
 
 **Stack:** ASP.NET Core 10 + Blazor Server
 **Auth:** Local email+password with TOTP 2FA; optional per-tenant OIDC (Entra, Okta, Google Workspace, Auth0)

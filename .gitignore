@@ -22,6 +22,11 @@ secrets.json
 ## macOS
 .DS_Store
 
+## Pre-product historical docs (kept local, not published)
+docs/spec-v3-2026-04-14.md
+docs/portal-spec-2026-04-14.md
+docs/reference/
+
 ## Build results
 [Dd]ebug/
 [Rr]elease/
