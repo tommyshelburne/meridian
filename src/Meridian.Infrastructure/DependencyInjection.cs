@@ -129,7 +129,9 @@ public static class DependencyInjection
         services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<PipedriveOAuthBroker>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddTransient<ICrmOAuthBrokerFactory, CrmOAuthBrokerFactory>();
+        services.AddSingleton<ICrmOAuthStateProtector, DataProtectionCrmOAuthStateProtector>();
         services.AddScoped<CrmConnectionService>();
+        services.AddScoped<CrmOAuthService>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 

@@ -3,6 +3,7 @@ using Meridian.Infrastructure.Persistence;
 using Meridian.Portal.Auth;
 using Meridian.Portal.Auth.Oidc;
 using Meridian.Portal.Components;
+using Meridian.Portal.Crm;
 using Meridian.Portal.Ingestion;
 using Meridian.Portal.Opportunities;
 using Meridian.Portal.Outreach;
@@ -88,6 +89,7 @@ app.UseAuthorization();
 app.UseMiddleware<TenantClaimMiddleware>();
 
 app.MapAuthEndpoints();
+app.MapCrmOAuthEndpoints();
 app.MapSsoSettingsEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();
