@@ -1,6 +1,7 @@
 using Meridian.Domain.Audit;
 using Meridian.Domain.Auth;
 using Meridian.Domain.Contacts;
+using Meridian.Domain.Crm;
 using Meridian.Domain.Memory;
 using Meridian.Domain.Opportunities;
 using Meridian.Domain.Outreach;
@@ -42,6 +43,7 @@ public class MeridianDbContext : DbContext
     public DbSet<OidcConfig> OidcConfigs => Set<OidcConfig>();
     public DbSet<SourceDefinition> SourceDefinitions => Set<SourceDefinition>();
     public DbSet<OutboundConfiguration> OutboundConfigurations => Set<OutboundConfiguration>();
+    public DbSet<CrmConnection> CrmConnections => Set<CrmConnection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,5 +67,6 @@ public class MeridianDbContext : DbContext
         modelBuilder.Entity<SuppressionEntry>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<SourceDefinition>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<OutboundConfiguration>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
+        modelBuilder.Entity<CrmConnection>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
     }
 }

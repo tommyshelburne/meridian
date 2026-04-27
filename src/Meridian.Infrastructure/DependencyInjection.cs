@@ -1,4 +1,5 @@
 using Meridian.Application.Auth;
+using Meridian.Application.Crm;
 using Meridian.Application.Ports;
 using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Auth;
@@ -52,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<IOidcConfigRepository, OidcConfigRepository>();
         services.AddScoped<ISourceDefinitionRepository, SourceDefinitionRepository>();
         services.AddScoped<IOutboundConfigurationRepository, OutboundConfigurationRepository>();
+        services.AddScoped<ICrmConnectionRepository, CrmConnectionRepository>();
 
         // Scoring — v2 rule-based engine
         var scoringConfig = new ScoringConfiguration();
@@ -117,6 +119,7 @@ public static class DependencyInjection
         services.AddScoped<DevSeedService>();
         services.AddSingleton<ICrmAdapter, NoopCrmAdapter>();
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
+        services.AddScoped<CrmConnectionService>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 

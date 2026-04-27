@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Meridian.Application.Common;
+using Meridian.Application.Crm;
 using Meridian.Application.Ports;
 using Meridian.Domain.Common;
 using Meridian.Domain.Opportunities;
@@ -48,16 +49,20 @@ public class CrmAdapterFactoryTests
         public CrmProvider Provider { get; }
         public StubCrmAdapter(CrmProvider provider) => Provider = provider;
 
-        public Task<ServiceResult<string>> FindOrCreateOrganizationAsync(string agencyName, CancellationToken ct)
+        public Task<ServiceResult<string>> FindOrCreateOrganizationAsync(
+            CrmConnectionContext ctx, string agencyName, CancellationToken ct)
             => Task.FromResult(ServiceResult<string>.Ok("org"));
 
-        public Task<ServiceResult<string>> CreateDealAsync(Opportunity opportunity, string organizationId, CancellationToken ct)
+        public Task<ServiceResult<string>> CreateDealAsync(
+            CrmConnectionContext ctx, Opportunity opportunity, string organizationId, CancellationToken ct)
             => Task.FromResult(ServiceResult<string>.Ok("deal"));
 
-        public Task<ServiceResult> UpdateDealStageAsync(string dealId, string stage, CancellationToken ct)
+        public Task<ServiceResult> UpdateDealStageAsync(
+            CrmConnectionContext ctx, string dealId, string stage, CancellationToken ct)
             => Task.FromResult(ServiceResult.Ok());
 
-        public Task<ServiceResult> AddActivityAsync(string dealId, string type, string description, CancellationToken ct)
+        public Task<ServiceResult> AddActivityAsync(
+            CrmConnectionContext ctx, string dealId, string type, string description, CancellationToken ct)
             => Task.FromResult(ServiceResult.Ok());
     }
 }

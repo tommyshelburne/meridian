@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Meridian.Application.Common;
+using Meridian.Application.Crm;
 using Meridian.Application.Ports;
 using Meridian.Domain.Audit;
 using Meridian.Domain.Common;
@@ -14,6 +15,7 @@ public class MeridianPipelineService
     private readonly IScoringEngine _scoringEngine;
     private readonly IEnumerable<IPocEnricher> _enrichers;
     private readonly ICrmAdapterFactory _crmAdapterFactory;
+    private readonly CrmConnectionService _crmConnections;
     private readonly IOpportunityRepository _opportunityRepo;
     private readonly IContactRepository _contactRepo;
     private readonly IAuditLog _auditLog;
@@ -24,6 +26,7 @@ public class MeridianPipelineService
         IScoringEngine scoringEngine,
         IEnumerable<IPocEnricher> enrichers,
         ICrmAdapterFactory crmAdapterFactory,
+        CrmConnectionService crmConnections,
         IOpportunityRepository opportunityRepo,
         IContactRepository contactRepo,
         IAuditLog auditLog,
@@ -33,6 +36,7 @@ public class MeridianPipelineService
         _scoringEngine = scoringEngine;
         _enrichers = enrichers;
         _crmAdapterFactory = crmAdapterFactory;
+        _crmConnections = crmConnections;
         _opportunityRepo = opportunityRepo;
         _contactRepo = contactRepo;
         _auditLog = auditLog;
@@ -42,6 +46,11 @@ public class MeridianPipelineService
     public async Task<ServiceResult<PipelineRunSummary>> ExecuteAsync(Guid tenantId, CancellationToken ct)
     {
         var summary = new PipelineRunSummary();
+
+        // Resolve the tenant's CRM adapter once per run. If no connection is
+        // configured (or the configured provider's adapter isn't registered),
+        // fall back to Noop so the pipeline still produces a coherent run.
+        var (crm, crmCtx) = await ResolveCrmAdapterAsync(tenantId, ct);
 
         // 1. Ingest from all sources in parallel
         var fetchTasks = _sources.Select(s => FetchFromSourceAsync(s, tenantId, ct));
@@ -120,14 +129,11 @@ public class MeridianPipelineService
                 if (opp.Contacts.Count > 0) break;
             }
 
-            // 5. Create CRM deal for Pursue/Partner. Slice 1 always resolves the
-            // Noop adapter; per-tenant connection lookup lands with the
-            // CrmConnection aggregate in Slice 2.
-            var crm = _crmAdapterFactory.Resolve(CrmProvider.None);
-            var orgResult = await crm.FindOrCreateOrganizationAsync(opp.Agency.Name, ct);
+            // 5. Create CRM deal for Pursue/Partner using the tenant's adapter.
+            var orgResult = await crm.FindOrCreateOrganizationAsync(crmCtx, opp.Agency.Name, ct);
             if (orgResult.IsSuccess)
             {
-                var dealResult = await crm.CreateDealAsync(opp, orgResult.Value!, ct);
+                var dealResult = await crm.CreateDealAsync(crmCtx, opp, orgResult.Value!, ct);
                 if (dealResult.IsSuccess)
                 {
                     summary.DealsCreated++;
@@ -159,6 +165,24 @@ public class MeridianPipelineService
         {
             _logger.LogError(ex, "Failed to fetch from {Source}", source.SourceName);
             return ServiceResult<IReadOnlyList<Opportunity>>.Fail($"{source.SourceName}: {ex.Message}");
+        }
+    }
+
+    private async Task<(ICrmAdapter Adapter, CrmConnectionContext Ctx)> ResolveCrmAdapterAsync(
+        Guid tenantId, CancellationToken ct)
+    {
+        var ctx = await _crmConnections.GetContextAsync(tenantId, ct)
+                  ?? CrmConnectionContext.None(tenantId);
+        try
+        {
+            return (_crmAdapterFactory.Resolve(ctx.Provider), ctx);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex,
+                "No adapter registered for tenant {TenantId} provider {Provider}; falling back to Noop",
+                tenantId, ctx.Provider);
+            return (_crmAdapterFactory.Resolve(CrmProvider.None), CrmConnectionContext.None(tenantId));
         }
     }
 }

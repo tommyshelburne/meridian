@@ -1,9 +1,12 @@
 ## .NET
 bin/
 obj/
-# EF Core tooling on macOS sometimes emits literal-backslash paths
+# EF Core tooling on macOS sometimes emits literal-backslash paths.
+# Match at any depth — `dotnet ef` writes these under each project dir.
 bin\Debug/
 bin\Release/
+**/bin\Debug/
+**/bin\Release/
 *.user
 *.suo
 *.userosscache
