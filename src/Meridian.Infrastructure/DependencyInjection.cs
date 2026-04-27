@@ -120,10 +120,13 @@ public static class DependencyInjection
         services.AddScoped<DevSeedService>();
         services.AddSingleton<ICrmAdapter, NoopCrmAdapter>();
         services.Configure<PipedriveOptions>(configuration.GetSection(PipedriveOptions.SectionName));
+        services.Configure<PipedriveOAuthOptions>(configuration.GetSection(PipedriveOAuthOptions.SectionName));
         services.AddHttpClient<PipedriveAdapter>();
+        services.AddHttpClient<PipedriveOAuthBroker>();
         // Route ICrmAdapter resolution through the typed-client registration so the
         // HttpClient factory configures BaseAddress / handlers as registered above.
         services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<PipedriveAdapter>());
+        services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<PipedriveOAuthBroker>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddTransient<ICrmOAuthBrokerFactory, CrmOAuthBrokerFactory>();
         services.AddScoped<CrmConnectionService>();
