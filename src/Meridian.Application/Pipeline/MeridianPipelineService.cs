@@ -13,7 +13,7 @@ public class MeridianPipelineService
     private readonly IEnumerable<IOpportunitySource> _sources;
     private readonly IScoringEngine _scoringEngine;
     private readonly IEnumerable<IPocEnricher> _enrichers;
-    private readonly ICrmClient _crmClient;
+    private readonly ICrmAdapterFactory _crmAdapterFactory;
     private readonly IOpportunityRepository _opportunityRepo;
     private readonly IContactRepository _contactRepo;
     private readonly IAuditLog _auditLog;
@@ -23,7 +23,7 @@ public class MeridianPipelineService
         IEnumerable<IOpportunitySource> sources,
         IScoringEngine scoringEngine,
         IEnumerable<IPocEnricher> enrichers,
-        ICrmClient crmClient,
+        ICrmAdapterFactory crmAdapterFactory,
         IOpportunityRepository opportunityRepo,
         IContactRepository contactRepo,
         IAuditLog auditLog,
@@ -32,7 +32,7 @@ public class MeridianPipelineService
         _sources = sources;
         _scoringEngine = scoringEngine;
         _enrichers = enrichers;
-        _crmClient = crmClient;
+        _crmAdapterFactory = crmAdapterFactory;
         _opportunityRepo = opportunityRepo;
         _contactRepo = contactRepo;
         _auditLog = auditLog;
@@ -120,11 +120,14 @@ public class MeridianPipelineService
                 if (opp.Contacts.Count > 0) break;
             }
 
-            // 5. Create CRM deal for Pursue/Partner
-            var orgResult = await _crmClient.FindOrCreateOrganizationAsync(opp.Agency.Name, ct);
+            // 5. Create CRM deal for Pursue/Partner. Slice 1 always resolves the
+            // Noop adapter; per-tenant connection lookup lands with the
+            // CrmConnection aggregate in Slice 2.
+            var crm = _crmAdapterFactory.Resolve(CrmProvider.None);
+            var orgResult = await crm.FindOrCreateOrganizationAsync(opp.Agency.Name, ct);
             if (orgResult.IsSuccess)
             {
-                var dealResult = await _crmClient.CreateDealAsync(opp, orgResult.Value!, ct);
+                var dealResult = await crm.CreateDealAsync(opp, orgResult.Value!, ct);
                 if (dealResult.IsSuccess)
                 {
                     summary.DealsCreated++;

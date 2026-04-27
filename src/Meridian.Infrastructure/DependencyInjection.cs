@@ -115,7 +115,8 @@ public static class DependencyInjection
         services.AddScoped<OpportunityDetailService>();
         services.AddScoped<ManualEnrichmentService>();
         services.AddScoped<DevSeedService>();
-        services.AddSingleton<ICrmClient, NoopCrmClient>();
+        services.AddSingleton<ICrmAdapter, NoopCrmAdapter>();
+        services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
 

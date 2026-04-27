@@ -1,24 +1,21 @@
 using Meridian.Application.Common;
 using Meridian.Application.Ports;
+using Meridian.Domain.Common;
 using Meridian.Domain.Opportunities;
 using Microsoft.Extensions.Logging;
 
 namespace Meridian.Infrastructure.Crm;
 
-/// <summary>
-/// No-op CRM adapter that lets the pipeline orchestrate "create deal" without an
-/// external system. Logs what would have happened and returns synthetic IDs so
-/// downstream audit / enrollment flows still see a valid pipeline run.
-///
-/// Per-tenant CRM provider routing (Pipedrive, HubSpot, Salesforce) is a v3.1
-/// concern; this stub keeps v3.0 deployable without forcing every tenant to
-/// configure a CRM up front.
-/// </summary>
-public class NoopCrmClient : ICrmClient
+// Default adapter for tenants without a configured CRM connection. Logs each
+// would-be call and returns synthetic IDs so downstream audit / enrollment
+// still see a coherent pipeline run.
+public class NoopCrmAdapter : ICrmAdapter
 {
-    private readonly ILogger<NoopCrmClient> _logger;
+    private readonly ILogger<NoopCrmAdapter> _logger;
 
-    public NoopCrmClient(ILogger<NoopCrmClient> logger) => _logger = logger;
+    public NoopCrmAdapter(ILogger<NoopCrmAdapter> logger) => _logger = logger;
+
+    public CrmProvider Provider => CrmProvider.None;
 
     public Task<ServiceResult<string>> FindOrCreateOrganizationAsync(string agencyName, CancellationToken ct)
     {
