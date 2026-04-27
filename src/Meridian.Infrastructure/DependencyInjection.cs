@@ -16,6 +16,7 @@ using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Application.Opportunities;
 using Meridian.Application.Outreach;
 using Meridian.Infrastructure.Crm;
+using Meridian.Infrastructure.Crm.HubSpot;
 using Meridian.Infrastructure.Crm.Pipedrive;
 using Meridian.Infrastructure.Outreach;
 using Meridian.Infrastructure.Outreach.Resend;
@@ -127,6 +128,10 @@ public static class DependencyInjection
         // HttpClient factory configures BaseAddress / handlers as registered above.
         services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<PipedriveAdapter>());
         services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<PipedriveOAuthBroker>());
+
+        services.Configure<HubSpotOptions>(configuration.GetSection(HubSpotOptions.SectionName));
+        services.AddHttpClient<HubSpotAdapter>();
+        services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<HubSpotAdapter>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddTransient<ICrmOAuthBrokerFactory, CrmOAuthBrokerFactory>();
         services.AddSingleton<ICrmOAuthStateProtector, DataProtectionCrmOAuthStateProtector>();
