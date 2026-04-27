@@ -18,6 +18,7 @@ using Meridian.Application.Outreach;
 using Meridian.Infrastructure.Crm;
 using Meridian.Infrastructure.Crm.HubSpot;
 using Meridian.Infrastructure.Crm.Pipedrive;
+using Meridian.Infrastructure.Crm.Salesforce;
 using Meridian.Infrastructure.Outreach;
 using Meridian.Infrastructure.Outreach.Resend;
 using Meridian.Infrastructure.Scoring;
@@ -135,6 +136,13 @@ public static class DependencyInjection
         services.AddHttpClient<HubSpotOAuthBroker>();
         services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<HubSpotAdapter>());
         services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<HubSpotOAuthBroker>());
+
+        services.Configure<SalesforceOptions>(configuration.GetSection(SalesforceOptions.SectionName));
+        services.Configure<SalesforceOAuthOptions>(configuration.GetSection(SalesforceOAuthOptions.SectionName));
+        services.AddHttpClient<SalesforceAdapter>();
+        services.AddHttpClient<SalesforceOAuthBroker>();
+        services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<SalesforceAdapter>());
+        services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<SalesforceOAuthBroker>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddTransient<ICrmOAuthBrokerFactory, CrmOAuthBrokerFactory>();
         services.AddSingleton<ICrmOAuthStateProtector, DataProtectionCrmOAuthStateProtector>();
