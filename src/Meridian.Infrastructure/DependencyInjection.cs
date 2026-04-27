@@ -130,8 +130,11 @@ public static class DependencyInjection
         services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<PipedriveOAuthBroker>());
 
         services.Configure<HubSpotOptions>(configuration.GetSection(HubSpotOptions.SectionName));
+        services.Configure<HubSpotOAuthOptions>(configuration.GetSection(HubSpotOAuthOptions.SectionName));
         services.AddHttpClient<HubSpotAdapter>();
+        services.AddHttpClient<HubSpotOAuthBroker>();
         services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<HubSpotAdapter>());
+        services.AddTransient<ICrmOAuthBroker>(sp => sp.GetRequiredService<HubSpotOAuthBroker>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddTransient<ICrmOAuthBrokerFactory, CrmOAuthBrokerFactory>();
         services.AddSingleton<ICrmOAuthStateProtector, DataProtectionCrmOAuthStateProtector>();
