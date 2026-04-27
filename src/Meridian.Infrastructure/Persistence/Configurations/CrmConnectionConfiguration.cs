@@ -19,6 +19,7 @@ public class CrmConnectionConfiguration : IEntityTypeConfiguration<CrmConnection
         builder.Property(c => c.EncryptedRefreshToken).HasColumnName("encrypted_refresh_token")
             .HasMaxLength(4000);
         builder.Property(c => c.ExpiresAt).HasColumnName("expires_at");
+        builder.Property(c => c.ApiBaseUrl).HasColumnName("api_base_url").HasMaxLength(500);
         builder.Property(c => c.DefaultPipelineId).HasColumnName("default_pipeline_id").HasMaxLength(200);
         builder.Property(c => c.IsActive).HasColumnName("is_active");
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");

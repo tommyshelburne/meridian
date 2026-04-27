@@ -9,10 +9,12 @@ using Microsoft.Extensions.Options;
 
 namespace Meridian.Infrastructure.Crm.Pipedrive;
 
-// Pipedrive REST adapter. v1.0 uses personal-API-token auth (token passed as
-// the `api_token` query param). OAuth token refresh and webhook intake are
-// scheduled for the OAuth slice — until then `ctx.RefreshToken`/`ExpiresAt`
-// are unused, and a 401 from Pipedrive surfaces as a failed ServiceResult.
+// Pipedrive REST adapter. Auth is the access token from the connection
+// context, passed as the `api_token` query param — Pipedrive accepts both
+// personal API tokens and OAuth access tokens through this parameter.
+// Per-tenant api_domain (set during OAuth provisioning) is honored via
+// ctx.ApiBaseUrl; personal-token connections fall back to the static base.
+// Token refresh on expiry is handled upstream by CrmConnectionService.
 public class PipedriveAdapter : ICrmAdapter
 {
     private readonly HttpClient _httpClient;
@@ -26,8 +28,11 @@ public class PipedriveAdapter : ICrmAdapter
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
-        if (_httpClient.BaseAddress is null)
-            _httpClient.BaseAddress = new Uri(_options.BaseUrl);
+        // Don't fix BaseAddress here — each request resolves against the
+        // tenant-specific api_domain (CrmConnectionContext.ApiBaseUrl) when
+        // the connection was provisioned via OAuth, otherwise falls back to
+        // the configured default. A static BaseAddress would force every
+        // tenant onto the same Pipedrive domain regardless of OAuth scope.
     }
 
     public async Task<ServiceResult<string>> FindOrCreateOrganizationAsync(
@@ -37,6 +42,7 @@ public class PipedriveAdapter : ICrmAdapter
             return ServiceResult<string>.Fail("Organization name is required.");
 
         var search = await GetEnvelopeAsync<PipedriveSearchResult>(
+            ctx,
             $"organizations/search?term={Uri.EscapeDataString(agencyName)}&exact_match=true&{TokenQuery(ctx)}", ct);
         if (!search.IsSuccess) return ServiceResult<string>.Fail(search.Error!);
 
@@ -46,7 +52,7 @@ public class PipedriveAdapter : ICrmAdapter
             return ServiceResult<string>.Ok(existing.Item.Id.ToString());
 
         var create = await PostEnvelopeAsync<PipedriveOrganization>(
-            $"organizations?{TokenQuery(ctx)}", new { name = agencyName }, ct);
+            ctx, $"organizations?{TokenQuery(ctx)}", new { name = agencyName }, ct);
         return create.IsSuccess
             ? ServiceResult<string>.Ok(create.Value!.Id.ToString())
             : ServiceResult<string>.Fail(create.Error!);
@@ -74,7 +80,7 @@ public class PipedriveAdapter : ICrmAdapter
             body["pipeline_id"] = pipelineId;
         }
 
-        var create = await PostEnvelopeAsync<PipedriveDeal>($"deals?{TokenQuery(ctx)}", body, ct);
+        var create = await PostEnvelopeAsync<PipedriveDeal>(ctx, $"deals?{TokenQuery(ctx)}", body, ct);
         return create.IsSuccess
             ? ServiceResult<string>.Ok(create.Value!.Id.ToString())
             : ServiceResult<string>.Fail(create.Error!);
@@ -89,7 +95,7 @@ public class PipedriveAdapter : ICrmAdapter
             return ServiceResult.Fail($"Pipedrive stage id must be numeric; got '{stage}'.");
 
         var update = await PutEnvelopeAsync<PipedriveDeal>(
-            $"deals/{id}?{TokenQuery(ctx)}", new { stage_id = stageId }, ct);
+            ctx, $"deals/{id}?{TokenQuery(ctx)}", new { stage_id = stageId }, ct);
         return update.IsSuccess ? ServiceResult.Ok() : ServiceResult.Fail(update.Error!);
     }
 
@@ -106,51 +112,44 @@ public class PipedriveAdapter : ICrmAdapter
             ["subject"] = description
         };
 
-        var create = await PostEnvelopeAsync<PipedriveActivity>($"activities?{TokenQuery(ctx)}", body, ct);
+        var create = await PostEnvelopeAsync<PipedriveActivity>(ctx, $"activities?{TokenQuery(ctx)}", body, ct);
         return create.IsSuccess ? ServiceResult.Ok() : ServiceResult.Fail(create.Error!);
     }
 
     private static string TokenQuery(CrmConnectionContext ctx) =>
         $"api_token={Uri.EscapeDataString(ctx.AuthToken)}";
 
-    private async Task<ServiceResult<T>> GetEnvelopeAsync<T>(string relativeUrl, CancellationToken ct)
+    private Uri BuildUri(CrmConnectionContext ctx, string relativeUrl)
     {
-        try
-        {
-            var response = await _httpClient.GetAsync(relativeUrl, ct);
-            return await ReadEnvelopeAsync<T>(response, ct);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogWarning(ex, "Pipedrive GET {Url} failed", relativeUrl);
-            return ServiceResult<T>.Fail($"Pipedrive request failed: {ex.Message}");
-        }
+        var baseUrl = string.IsNullOrWhiteSpace(ctx.ApiBaseUrl) ? _options.BaseUrl : ctx.ApiBaseUrl;
+        if (!baseUrl.EndsWith('/')) baseUrl += '/';
+        return new Uri(new Uri(baseUrl), relativeUrl);
     }
 
-    private async Task<ServiceResult<T>> PostEnvelopeAsync<T>(string relativeUrl, object body, CancellationToken ct)
-    {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync(relativeUrl, body, ct);
-            return await ReadEnvelopeAsync<T>(response, ct);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogWarning(ex, "Pipedrive POST {Url} failed", relativeUrl);
-            return ServiceResult<T>.Fail($"Pipedrive request failed: {ex.Message}");
-        }
-    }
+    private Task<ServiceResult<T>> GetEnvelopeAsync<T>(CrmConnectionContext ctx, string relativeUrl, CancellationToken ct)
+        => SendEnvelopeAsync<T>(ctx, relativeUrl, "GET", body: null, ct);
 
-    private async Task<ServiceResult<T>> PutEnvelopeAsync<T>(string relativeUrl, object body, CancellationToken ct)
+    private Task<ServiceResult<T>> PostEnvelopeAsync<T>(CrmConnectionContext ctx, string relativeUrl, object body, CancellationToken ct)
+        => SendEnvelopeAsync<T>(ctx, relativeUrl, "POST", body, ct);
+
+    private Task<ServiceResult<T>> PutEnvelopeAsync<T>(CrmConnectionContext ctx, string relativeUrl, object body, CancellationToken ct)
+        => SendEnvelopeAsync<T>(ctx, relativeUrl, "PUT", body, ct);
+
+    private async Task<ServiceResult<T>> SendEnvelopeAsync<T>(
+        CrmConnectionContext ctx, string relativeUrl, string method, object? body, CancellationToken ct)
     {
+        var uri = BuildUri(ctx, relativeUrl);
         try
         {
-            var response = await _httpClient.PutAsJsonAsync(relativeUrl, body, ct);
+            using var request = new HttpRequestMessage(new HttpMethod(method), uri);
+            if (body is not null)
+                request.Content = JsonContent.Create(body);
+            using var response = await _httpClient.SendAsync(request, ct);
             return await ReadEnvelopeAsync<T>(response, ct);
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "Pipedrive PUT {Url} failed", relativeUrl);
+            _logger.LogWarning(ex, "Pipedrive {Method} {Url} failed", method, uri);
             return ServiceResult<T>.Fail($"Pipedrive request failed: {ex.Message}");
         }
     }

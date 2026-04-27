@@ -16,7 +16,7 @@ public class PipedriveAdapterTests
     private const string BaseUrl = "https://api.pipedrive.test/v1/";
     private static readonly Guid TenantId = Guid.NewGuid();
     private static readonly CrmConnectionContext PipedriveCtx = new(
-        TenantId, CrmProvider.Pipedrive, "tok-123", null, null, null);
+        TenantId, CrmProvider.Pipedrive, "tok-123", null, null, null, null);
 
     private static readonly JsonSerializerOptions WriteOptions = new()
     {

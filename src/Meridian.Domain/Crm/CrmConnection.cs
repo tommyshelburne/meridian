@@ -10,6 +10,7 @@ public class CrmConnection
     public string EncryptedAuthToken { get; private set; } = string.Empty;
     public string? EncryptedRefreshToken { get; private set; }
     public DateTimeOffset? ExpiresAt { get; private set; }
+    public string? ApiBaseUrl { get; private set; }
     public string? DefaultPipelineId { get; private set; }
     public bool IsActive { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -23,6 +24,7 @@ public class CrmConnection
         string encryptedAuthToken,
         string? encryptedRefreshToken = null,
         DateTimeOffset? expiresAt = null,
+        string? apiBaseUrl = null,
         string? defaultPipelineId = null)
     {
         if (tenantId == Guid.Empty)
@@ -39,9 +41,10 @@ public class CrmConnection
             TenantId = tenantId,
             Provider = provider,
             EncryptedAuthToken = encryptedAuthToken,
-            EncryptedRefreshToken = string.IsNullOrWhiteSpace(encryptedRefreshToken) ? null : encryptedRefreshToken,
+            EncryptedRefreshToken = NormalizeNullable(encryptedRefreshToken),
             ExpiresAt = expiresAt,
-            DefaultPipelineId = string.IsNullOrWhiteSpace(defaultPipelineId) ? null : defaultPipelineId.Trim(),
+            ApiBaseUrl = NormalizeNullable(apiBaseUrl),
+            DefaultPipelineId = NormalizeNullable(defaultPipelineId),
             IsActive = true,
             CreatedAt = now,
             UpdatedAt = now
@@ -51,14 +54,17 @@ public class CrmConnection
     public void RotateAuthToken(
         string encryptedAuthToken,
         string? encryptedRefreshToken = null,
-        DateTimeOffset? expiresAt = null)
+        DateTimeOffset? expiresAt = null,
+        string? apiBaseUrl = null)
     {
         if (string.IsNullOrWhiteSpace(encryptedAuthToken))
             throw new ArgumentException("Auth token is required.", nameof(encryptedAuthToken));
 
         EncryptedAuthToken = encryptedAuthToken;
-        EncryptedRefreshToken = string.IsNullOrWhiteSpace(encryptedRefreshToken) ? null : encryptedRefreshToken;
+        EncryptedRefreshToken = NormalizeNullable(encryptedRefreshToken);
         ExpiresAt = expiresAt;
+        if (apiBaseUrl is not null)
+            ApiBaseUrl = NormalizeNullable(apiBaseUrl);
         Touch();
     }
 
@@ -66,7 +72,8 @@ public class CrmConnection
         CrmProvider provider,
         string encryptedAuthToken,
         string? encryptedRefreshToken = null,
-        DateTimeOffset? expiresAt = null)
+        DateTimeOffset? expiresAt = null,
+        string? apiBaseUrl = null)
     {
         if (provider == CrmProvider.None)
             throw new ArgumentException("CrmProvider.None is not a valid connection provider.", nameof(provider));
@@ -75,8 +82,9 @@ public class CrmConnection
 
         Provider = provider;
         EncryptedAuthToken = encryptedAuthToken;
-        EncryptedRefreshToken = string.IsNullOrWhiteSpace(encryptedRefreshToken) ? null : encryptedRefreshToken;
+        EncryptedRefreshToken = NormalizeNullable(encryptedRefreshToken);
         ExpiresAt = expiresAt;
+        ApiBaseUrl = NormalizeNullable(apiBaseUrl);
         DefaultPipelineId = null;
         Touch();
     }
@@ -93,4 +101,7 @@ public class CrmConnection
     public bool IsExpired(DateTimeOffset now) => ExpiresAt.HasValue && ExpiresAt.Value <= now;
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
+
+    private static string? NormalizeNullable(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

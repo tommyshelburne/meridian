@@ -125,6 +125,7 @@ public static class DependencyInjection
         // HttpClient factory configures BaseAddress / handlers as registered above.
         services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<PipedriveAdapter>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
+        services.AddTransient<ICrmOAuthBrokerFactory, CrmOAuthBrokerFactory>();
         services.AddScoped<CrmConnectionService>();
         services.AddScoped<TenantOutboundContext>();
         services.AddSingleton<SvixSignatureVerifier>();
