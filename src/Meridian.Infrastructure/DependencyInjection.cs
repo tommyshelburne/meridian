@@ -16,6 +16,7 @@ using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Application.Opportunities;
 using Meridian.Application.Outreach;
 using Meridian.Infrastructure.Crm;
+using Meridian.Infrastructure.Crm.Pipedrive;
 using Meridian.Infrastructure.Outreach;
 using Meridian.Infrastructure.Outreach.Resend;
 using Meridian.Infrastructure.Scoring;
@@ -118,6 +119,11 @@ public static class DependencyInjection
         services.AddScoped<ManualEnrichmentService>();
         services.AddScoped<DevSeedService>();
         services.AddSingleton<ICrmAdapter, NoopCrmAdapter>();
+        services.Configure<PipedriveOptions>(configuration.GetSection(PipedriveOptions.SectionName));
+        services.AddHttpClient<PipedriveAdapter>();
+        // Route ICrmAdapter resolution through the typed-client registration so the
+        // HttpClient factory configures BaseAddress / handlers as registered above.
+        services.AddTransient<ICrmAdapter>(sp => sp.GetRequiredService<PipedriveAdapter>());
         services.AddTransient<ICrmAdapterFactory, CrmAdapterFactory>();
         services.AddScoped<CrmConnectionService>();
         services.AddScoped<TenantOutboundContext>();
