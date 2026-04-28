@@ -14,6 +14,12 @@
     first sequence is used as a fallback.
 </p>
 
+<HelpCallout Variant="HelpCallout.CalloutVariant.Warn" Title="Edits + deletes are intentional gaps">
+    Templates and sequences are <strong>snapshotted at enrollment time</strong> — editing or deleting one would
+    strand in-flight enrollments. For v3.0, create new ones and let unused sequences age out.
+    See <a href="/help/03-sequences-and-templates">the help article</a> for details.
+</HelpCallout>
+
 @if (!string.IsNullOrEmpty(Error))
 {
     <div class="auth-error" role="alert">@Error</div>

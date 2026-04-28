@@ -12,6 +12,18 @@
     The sequence engine won't send anything until this is configured.
 </p>
 
+<HelpCallout Variant="HelpCallout.CalloutVariant.Tip" Title="Start with a small daily cap">
+    For your first day, set <strong>Daily send cap</strong> to something like <code>5</code>.
+    Even with a perfect template, the first sends are the highest-risk for accidental loops or
+    misconfigured From addresses. Raise the cap once you've seen successful sends + replies.
+</HelpCallout>
+
+<HelpCallout Variant="HelpCallout.CalloutVariant.Info" Title="Webhook secret enables bounce handling">
+    Without the Resend signing secret, hard bounces and complaints don't flow back into Meridian's
+    suppression list — every bounced contact stays "active" forever. See
+    <a href="/help/04-bounces-replies">Bounces, replies, and unsubscribes</a> to set this up.
+</HelpCallout>
+
 @if (!string.IsNullOrEmpty(Error))
 {
     <div class="auth-error" role="alert">@Error</div>

@@ -1,0 +1,40 @@
+@* Inline help/warning/tip callout. Drop next to a form field or section heading
+   to surface non-obvious behavior the operator needs to know. Three variants:
+   info (blue), tip (green), warn (amber). *@
+
+<div class="callout callout-@(Variant.ToString().ToLowerInvariant())" role="@AriaRole">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="callout-title">@Icon() @Title</div>
+    }
+    <div class="callout-body">@ChildContent</div>
+</div>
+
+@code {
+    public enum CalloutVariant { Info, Tip, Warn }
+
+    [Parameter] public CalloutVariant Variant { get; set; } = CalloutVariant.Info;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string AriaRole => Variant == CalloutVariant.Warn ? "alert" : "note";
+
+    private string Icon() => Variant switch
+    {
+        CalloutVariant.Tip => "💡",
+        CalloutVariant.Warn => "⚠",
+        _ => "ℹ"
+    };
+}
+
+<style>
+    .callout { border-radius: 8px; padding: 0.75rem 1rem; margin: 0.75rem 0; border-left: 4px solid; font-size: 0.9rem; }
+    .callout-title { font-weight: 600; margin-bottom: 0.25rem; display: flex; gap: 0.5rem; align-items: baseline; }
+    .callout-body { line-height: 1.5; }
+    .callout-body p:first-child { margin-top: 0; }
+    .callout-body p:last-child { margin-bottom: 0; }
+    .callout-body code { background: rgba(0,0,0,0.05); padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.85em; }
+    .callout-info { background: #eef4fb; border-color: #4a80c8; color: #1e3a5f; }
+    .callout-tip  { background: #ecf6ee; border-color: #5aa56a; color: #1f5f2a; }
+    .callout-warn { background: #fdf4e3; border-color: #d49b3a; color: #6e4a10; }
+</style>
