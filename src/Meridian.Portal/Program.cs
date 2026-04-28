@@ -11,6 +11,7 @@ using Meridian.Portal.Sources;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -21,7 +22,11 @@ var connectionString = builder.Configuration.GetConnectionString("Meridian")
     ?? throw new InvalidOperationException("ConnectionStrings:Meridian is not configured.");
 
 builder.Services.AddMeridianInfrastructure(connectionString, builder.Configuration);
-builder.Services.AddDataProtection();
+// SetApplicationName must match the Worker so that, in production, both
+// hosts can read the same shared keyring (PersistKeysToFileSystem against
+// a shared volume). Without matching names the Worker can't decrypt
+// secrets the Portal wrote.
+builder.Services.AddDataProtection().SetApplicationName("Meridian");
 
 // Register the OIDC PostConfigureOptions BEFORE AddOpenIdConnect so it runs before
 // the framework's validating PostConfigureOptions (which throws if Authority/ClientId
