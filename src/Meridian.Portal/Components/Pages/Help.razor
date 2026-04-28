@@ -1,0 +1,105 @@
+@page "/help"
+@page "/help/{Slug}"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Portal.Help
+@inject HelpArticleService Articles
+
+<PageTitle>Help · Meridian</PageTitle>
+
+<div class="help-shell">
+    <aside class="help-index">
+        <h1>Help</h1>
+        <form method="get" class="help-search">
+            <input type="search" name="q" value="@Query" placeholder="Search articles…" autofocus />
+        </form>
+        <ul class="help-list">
+            @foreach (var a in _filtered)
+            {
+                var href = string.IsNullOrEmpty(Query)
+                    ? $"/help/{a.Slug}"
+                    : $"/help/{a.Slug}?q={Uri.EscapeDataString(Query)}";
+                <li class="@(a.Slug == Slug ? "active" : "")">
+                    <a href="@href">
+                        <div class="title">@a.Title</div>
+                        @if (!string.IsNullOrEmpty(a.Summary))
+                        {
+                            <div class="summary">@a.Summary</div>
+                        }
+                    </a>
+                </li>
+            }
+            @if (_filtered.Count == 0)
+            {
+                <li class="empty">No articles match "<strong>@Query</strong>".</li>
+            }
+        </ul>
+    </aside>
+
+    <article class="help-article">
+        @if (_current is not null)
+        {
+            <h1>@_current.Title</h1>
+            @if (_current.Tags.Count > 0)
+            {
+                <div class="tags">
+                    @foreach (var tag in _current.Tags)
+                    {
+                        <span class="tag">@tag</span>
+                    }
+                </div>
+            }
+            <div class="article-body">
+                @((MarkupString)Articles.RenderHtml(_current.MarkdownBody))
+            </div>
+        }
+        else
+        {
+            <h1>Pick an article</h1>
+            <p>Choose a topic from the list, or search for something specific. The full set lives in <code>src/Meridian.Portal/Help/Articles/</code> — file a PR to add or edit.</p>
+        }
+    </article>
+</div>
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+
+    private IReadOnlyList<HelpArticle> _filtered = Array.Empty<HelpArticle>();
+    private HelpArticle? _current;
+
+    protected override void OnParametersSet()
+    {
+        _filtered = Articles.Search(Query);
+        _current = Slug is not null ? Articles.GetBySlug(Slug) : _filtered.FirstOrDefault();
+    }
+}
+
+<style>
+    .help-shell { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; align-items: start; }
+    .help-index { position: sticky; top: 1rem; background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.25rem; }
+    .help-index h1 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+    .help-search input { width: 100%; padding: 0.5rem 0.7rem; border: 1px solid #cfd3e0; border-radius: 6px; margin-bottom: 0.75rem; }
+    .help-list { list-style: none; padding: 0; margin: 0; }
+    .help-list li { margin-bottom: 0.5rem; }
+    .help-list li a { display: block; padding: 0.5rem 0.7rem; border-radius: 6px; text-decoration: none; color: #2a3552; }
+    .help-list li a:hover { background: #f4f6fb; }
+    .help-list li.active a { background: #2a3552; color: white; }
+    .help-list .title { font-weight: 600; font-size: 0.92rem; }
+    .help-list .summary { font-size: 0.82rem; opacity: 0.8; margin-top: 0.15rem; }
+    .help-list .empty { color: #6a6e82; font-size: 0.9rem; padding: 0.5rem 0.7rem; }
+    .help-article { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 2rem 2.5rem; max-width: 48rem; }
+    .help-article h1 { margin-top: 0; }
+    .help-article .tags { margin: -0.25rem 0 1rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .help-article .tag { font-size: 0.75rem; background: #eef0f6; color: #4b5163; padding: 0.15rem 0.55rem; border-radius: 99px; }
+    .article-body { line-height: 1.6; }
+    .article-body h2 { margin-top: 2rem; font-size: 1.15rem; }
+    .article-body h3 { margin-top: 1.5rem; font-size: 1rem; }
+    .article-body code { background: #f4f6fb; padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.9em; }
+    .article-body pre { background: #1f2235; color: #e8ebf2; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+    .article-body pre code { background: transparent; color: inherit; padding: 0; }
+    .article-body table { border-collapse: collapse; margin: 1rem 0; }
+    .article-body th, .article-body td { padding: 0.4rem 0.75rem; border: 1px solid #e3e6ef; text-align: left; }
+    .article-body th { background: #f7f8fc; }
+    .article-body a { color: #2a3552; }
+</style>

@@ -4,6 +4,7 @@ using Meridian.Portal.Auth;
 using Meridian.Portal.Auth.Oidc;
 using Meridian.Portal.Components;
 using Meridian.Portal.Crm;
+using Meridian.Portal.Help;
 using Meridian.Portal.Ingestion;
 using Meridian.Portal.Opportunities;
 using Meridian.Portal.Outreach;
@@ -64,6 +65,8 @@ builder.Services.Replace(ServiceDescriptor.Singleton<IAuthenticationSchemeProvid
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddSingleton<HelpArticleService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
