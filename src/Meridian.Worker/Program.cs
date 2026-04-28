@@ -53,6 +53,18 @@ if (args.Length >= 2 && args[0] == "--smoke")
     return;
 }
 
+// `--hash-password <pwd>`: print a BCrypt hash compatible with AuthService.
+// Useful for direct SQL password resets when the email-based reset path is
+// unavailable (e.g. tenant has no OutboundConfiguration so reset emails are
+// dropped). Dev-only — production should use the email-based flow.
+if (args.Length >= 2 && args[0] == "--hash-password")
+{
+    var hashHost = builder.Build();
+    var hasher = hashHost.Services.GetRequiredService<IPasswordHasher>();
+    Console.WriteLine(hasher.Hash(args[1]));
+    return;
+}
+
 // Hosted service
 builder.Services.AddHostedService<MeridianWorker>();
 
