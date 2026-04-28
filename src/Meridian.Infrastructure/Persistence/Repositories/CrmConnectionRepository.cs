@@ -16,6 +16,16 @@ public class CrmConnectionRepository : ICrmConnectionRepository
     public Task<CrmConnection?> GetByIdAsync(Guid id, CancellationToken ct)
         => _db.CrmConnections.FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public async Task<IReadOnlyList<CrmConnection>> ListRefreshableExpiringBeforeAsync(
+        DateTimeOffset cutoff, CancellationToken ct)
+        => await _db.CrmConnections
+            .IgnoreQueryFilters()
+            .Where(c => c.IsActive
+                     && c.ExpiresAt != null
+                     && c.ExpiresAt <= cutoff
+                     && c.EncryptedRefreshToken != null)
+            .ToListAsync(ct);
+
     public async Task AddAsync(CrmConnection connection, CancellationToken ct)
         => await _db.CrmConnections.AddAsync(connection, ct);
 

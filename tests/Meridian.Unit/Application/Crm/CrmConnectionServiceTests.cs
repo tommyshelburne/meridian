@@ -170,6 +170,18 @@ public class CrmConnectionServiceTests
         public Task<CrmConnection?> GetByIdAsync(Guid id, CancellationToken ct)
             => Task.FromResult(All.FirstOrDefault(c => c.Id == id));
 
+        public Task<IReadOnlyList<CrmConnection>> ListRefreshableExpiringBeforeAsync(
+            DateTimeOffset cutoff, CancellationToken ct)
+        {
+            IReadOnlyList<CrmConnection> result = All
+                .Where(c => c.IsActive
+                         && c.ExpiresAt.HasValue
+                         && c.ExpiresAt.Value <= cutoff
+                         && c.EncryptedRefreshToken is not null)
+                .ToList();
+            return Task.FromResult(result);
+        }
+
         public Task AddAsync(CrmConnection connection, CancellationToken ct)
         {
             All.Add(connection);
@@ -308,6 +320,92 @@ public class CrmConnectionServiceTests
 
         ctx.Should().BeNull();
         broker.RefreshCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RefreshExpiring_refreshes_only_connections_within_window()
+    {
+        var (svc, repo, _, brokers) = Build();
+        var nearTenant = Guid.NewGuid();
+        var farTenant = Guid.NewGuid();
+        await svc.ConnectAsync(nearTenant, CrmProvider.Pipedrive, "near-old",
+            refreshToken: "near-rt",
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(10));
+        await svc.ConnectAsync(farTenant, CrmProvider.Pipedrive, "far-current",
+            refreshToken: "far-rt",
+            expiresAt: DateTimeOffset.UtcNow.AddHours(2));
+
+        var broker = brokers.Register(CrmProvider.Pipedrive);
+        broker.NextRefreshTokens = new OAuthTokens(
+            "fresh-access", "fresh-refresh", DateTimeOffset.UtcNow.AddHours(1), null);
+
+        var result = await svc.RefreshExpiringAsync(TimeSpan.FromMinutes(30), CancellationToken.None);
+
+        result.Candidates.Should().Be(1);
+        result.Refreshed.Should().Be(1);
+        result.Failed.Should().Be(0);
+        broker.RefreshCalls.Should().Be(1);
+        repo.All.Single(c => c.TenantId == nearTenant).EncryptedAuthToken.Should().Be("ENC:fresh-access");
+        repo.All.Single(c => c.TenantId == farTenant).EncryptedAuthToken.Should().Be("ENC:far-current");
+    }
+
+    [Fact]
+    public async Task RefreshExpiring_skips_connections_without_refresh_token()
+    {
+        var (svc, _, _, brokers) = Build();
+        await svc.ConnectAsync(TenantId, CrmProvider.Pipedrive, "access-only",
+            refreshToken: null,
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(5));
+        var broker = brokers.Register(CrmProvider.Pipedrive);
+
+        var result = await svc.RefreshExpiringAsync(TimeSpan.FromMinutes(30), CancellationToken.None);
+
+        result.Candidates.Should().Be(0);
+        result.Refreshed.Should().Be(0);
+        broker.RefreshCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RefreshExpiring_counts_broker_failure_as_failed()
+    {
+        var (svc, _, _, brokers) = Build();
+        await svc.ConnectAsync(TenantId, CrmProvider.Pipedrive, "old",
+            refreshToken: "rt",
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(5));
+        var broker = brokers.Register(CrmProvider.Pipedrive);
+        broker.NextRefreshError = "invalid_grant";
+
+        var result = await svc.RefreshExpiringAsync(TimeSpan.FromMinutes(30), CancellationToken.None);
+
+        result.Candidates.Should().Be(1);
+        result.Refreshed.Should().Be(0);
+        result.Failed.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RefreshExpiring_skips_inactive_connections()
+    {
+        var (svc, _, _, brokers) = Build();
+        await svc.ConnectAsync(TenantId, CrmProvider.Pipedrive, "old",
+            refreshToken: "rt",
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(5));
+        await svc.DeactivateAsync(TenantId, CancellationToken.None);
+        var broker = brokers.Register(CrmProvider.Pipedrive);
+
+        var result = await svc.RefreshExpiringAsync(TimeSpan.FromMinutes(30), CancellationToken.None);
+
+        result.Candidates.Should().Be(0);
+        broker.RefreshCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RefreshExpiring_rejects_negative_window()
+    {
+        var (svc, _, _, _) = Build();
+
+        Func<Task> act = () => svc.RefreshExpiringAsync(TimeSpan.FromMinutes(-1), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Fact]

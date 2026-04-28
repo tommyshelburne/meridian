@@ -158,6 +158,9 @@ public class CrmOAuthServiceTests
             => Task.FromResult(All.FirstOrDefault(c => c.TenantId == tenantId));
         public Task<CrmConnection?> GetByIdAsync(Guid id, CancellationToken ct)
             => Task.FromResult(All.FirstOrDefault(c => c.Id == id));
+        public Task<IReadOnlyList<CrmConnection>> ListRefreshableExpiringBeforeAsync(
+            DateTimeOffset cutoff, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<CrmConnection>>(Array.Empty<CrmConnection>());
         public Task AddAsync(CrmConnection connection, CancellationToken ct)
         {
             All.Add(connection);

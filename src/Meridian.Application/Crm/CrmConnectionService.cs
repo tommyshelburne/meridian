@@ -17,6 +17,8 @@ public record CrmConnectionSummary(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 
+public record RefreshSweepResult(int Candidates, int Refreshed, int Failed);
+
 public class CrmConnectionService
 {
     // How long before ExpiresAt we proactively refresh. Avoids the boundary
@@ -150,6 +152,28 @@ public class CrmConnectionService
         connection.Deactivate();
         await _repo.SaveChangesAsync(ct);
         return ServiceResult.Ok();
+    }
+
+    // Proactive cross-tenant refresh sweep. Looks ahead by `window` so the
+    // job has a chance to renew tokens well before the lazy refresh-on-401
+    // path would otherwise kick in during a real send.
+    public async Task<RefreshSweepResult> RefreshExpiringAsync(TimeSpan window, CancellationToken ct)
+    {
+        if (window < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(window), "Window must be non-negative.");
+
+        var cutoff = DateTimeOffset.UtcNow + window;
+        var candidates = await _repo.ListRefreshableExpiringBeforeAsync(cutoff, ct);
+        var refreshed = 0;
+        var failed = 0;
+        foreach (var connection in candidates)
+        {
+            if (await TryRefreshAsync(connection, ct))
+                refreshed++;
+            else
+                failed++;
+        }
+        return new RefreshSweepResult(candidates.Count, refreshed, failed);
     }
 
     private static bool NeedsRefresh(CrmConnection connection) =>

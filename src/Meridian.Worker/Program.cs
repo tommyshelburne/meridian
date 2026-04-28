@@ -13,6 +13,7 @@ builder.Services.AddMeridianInfrastructure(connectionString, builder.Configurati
 builder.Services.AddSingleton<IMeridianJob, IngestionJob>();
 builder.Services.AddSingleton<IMeridianJob, SequenceJob>();
 builder.Services.AddSingleton<IMeridianJob, BidMonitorJob>();
+builder.Services.AddSingleton<IMeridianJob, CrmTokenRefreshJob>();
 
 // Hosted service
 builder.Services.AddHostedService<MeridianWorker>();
