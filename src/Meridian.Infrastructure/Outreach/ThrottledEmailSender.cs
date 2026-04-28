@@ -1,5 +1,6 @@
 using Meridian.Application.Common;
 using Meridian.Application.Ports;
+using Meridian.Domain.Tenants;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +14,8 @@ public class ThrottledEmailSender : IEmailSender
     private readonly IEmailSender _inner;
     private readonly SendThrottleState _state;
     private readonly SendThrottleOptions _options;
+    private readonly ITenantContext _tenantContext;
+    private readonly TenantOutboundContext _outboundContext;
     private readonly ILogger<ThrottledEmailSender> _logger;
     private readonly Func<DateTimeOffset> _clock;
 
@@ -20,8 +23,10 @@ public class ThrottledEmailSender : IEmailSender
         IEmailSender inner,
         SendThrottleState state,
         IOptions<SendThrottleOptions> options,
+        ITenantContext tenantContext,
+        TenantOutboundContext outboundContext,
         ILogger<ThrottledEmailSender> logger)
-        : this(inner, state, options.Value, logger, () => DateTimeOffset.UtcNow)
+        : this(inner, state, options.Value, tenantContext, outboundContext, logger, () => DateTimeOffset.UtcNow)
     {
     }
 
@@ -29,15 +34,18 @@ public class ThrottledEmailSender : IEmailSender
         IEmailSender inner,
         SendThrottleState state,
         SendThrottleOptions options,
+        ITenantContext tenantContext,
+        TenantOutboundContext outboundContext,
         ILogger<ThrottledEmailSender> logger,
         Func<DateTimeOffset> clock)
     {
         _inner = inner;
         _state = state;
         _options = options;
+        _tenantContext = tenantContext;
+        _outboundContext = outboundContext;
         _logger = logger;
         _clock = clock;
-        _state.DailyCap = options.DailyCap;
     }
 
     public async Task<ServiceResult<SendResult>> SendAsync(EmailMessage message, CancellationToken ct)
@@ -51,16 +59,20 @@ public class ThrottledEmailSender : IEmailSender
             return ServiceResult<SendResult>.Fail(OutsideSendWindowError);
         }
 
-        if (_state.IsCapReached)
+        var tenantId = _tenantContext.TenantId;
+        var settings = await _outboundContext.GetAsync(ct);
+        var cap = settings?.DailyCap ?? _options.DailyCap;
+
+        if (_state.GetSentToday(tenantId) >= cap)
         {
-            _logger.LogWarning("Daily send cap reached ({Cap}); deferring send to {Recipient}",
-                _options.DailyCap, message.To);
+            _logger.LogWarning("Daily cap reached for tenant {TenantId} ({Cap}); deferring send to {Recipient}",
+                tenantId, cap, message.To);
             return ServiceResult<SendResult>.Fail(CapReachedError);
         }
 
         var result = await _inner.SendAsync(message, ct);
         if (result.IsSuccess)
-            _state.RecordSend();
+            _state.RecordSend(tenantId);
 
         return result;
     }

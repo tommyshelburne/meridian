@@ -24,7 +24,7 @@ public class ComplianceFooterEmailSenderTests
         string physicalAddress = "Test Co, 1 Main St, City, ST 00000",
         string unsubscribeBaseUrl = "https://example.com/u")
         => new(OutboundProviderType.Console, "", "f@x.com", "From", null,
-            physicalAddress, unsubscribeBaseUrl);
+            physicalAddress, unsubscribeBaseUrl, DailyCap: null);
 
     private static EmailMessage Msg(string body = "<p>Hello</p>") =>
         new("to@x.com", "from@x.com", "From", "Subject", body);

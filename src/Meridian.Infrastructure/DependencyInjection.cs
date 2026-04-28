@@ -184,6 +184,8 @@ public static class DependencyInjection
             chain = new ThrottledEmailSender(chain,
                 sp.GetRequiredService<SendThrottleState>(),
                 sp.GetRequiredService<IOptions<SendThrottleOptions>>(),
+                sp.GetRequiredService<ITenantContext>(),
+                sp.GetRequiredService<TenantOutboundContext>(),
                 sp.GetRequiredService<ILogger<ThrottledEmailSender>>());
             chain = new SuppressionFilterEmailSender(chain,
                 sp.GetRequiredService<IOutreachRepository>(),

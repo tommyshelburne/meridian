@@ -21,6 +21,7 @@ public class OutboundConfigurationConfiguration : IEntityTypeConfiguration<Outbo
         builder.Property(c => c.PhysicalAddress).HasColumnName("physical_address").HasMaxLength(500).IsRequired();
         builder.Property(c => c.UnsubscribeBaseUrl).HasColumnName("unsubscribe_base_url").HasMaxLength(1000).IsRequired();
         builder.Property(c => c.EncryptedWebhookSecret).HasColumnName("encrypted_webhook_secret").HasMaxLength(2000);
+        builder.Property(c => c.DailyCap).HasColumnName("daily_cap");
         builder.Property(c => c.IsEnabled).HasColumnName("is_enabled");
         builder.Property(c => c.CreatedAt).HasColumnName("created_at");
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");

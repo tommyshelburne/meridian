@@ -1,53 +1,50 @@
 namespace Meridian.Infrastructure.Outreach;
 
+// Per-tenant counter so a high-volume tenant can't exhaust a global cap and
+// starve quieter tenants. Each tenant gets its own daily counter that resets
+// at UTC midnight on first read after the rollover.
 public class SendThrottleState
 {
-    private int _sentToday;
-    private DateOnly _currentDay;
     private readonly object _lock = new();
+    private readonly Dictionary<Guid, TenantCounter> _counters = new();
 
-    public int DailyCap { get; set; } = 50;
-
-    public bool IsCapReached
-    {
-        get
-        {
-            lock (_lock)
-            {
-                ResetIfNewDay();
-                return _sentToday >= DailyCap;
-            }
-        }
-    }
-
-    public int SentToday
-    {
-        get
-        {
-            lock (_lock)
-            {
-                ResetIfNewDay();
-                return _sentToday;
-            }
-        }
-    }
-
-    public void RecordSend()
+    public int GetSentToday(Guid tenantId)
     {
         lock (_lock)
         {
-            ResetIfNewDay();
-            _sentToday++;
+            ResetIfNewDay(tenantId);
+            return _counters.TryGetValue(tenantId, out var c) ? c.SentToday : 0;
         }
     }
 
-    private void ResetIfNewDay()
+    public void RecordSend(Guid tenantId)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (_currentDay != today)
+        lock (_lock)
         {
-            _currentDay = today;
-            _sentToday = 0;
+            ResetIfNewDay(tenantId);
+            if (!_counters.TryGetValue(tenantId, out var c))
+            {
+                c = new TenantCounter { Day = Today() };
+                _counters[tenantId] = c;
+            }
+            c.SentToday++;
         }
+    }
+
+    private void ResetIfNewDay(Guid tenantId)
+    {
+        if (_counters.TryGetValue(tenantId, out var c) && c.Day != Today())
+        {
+            c.SentToday = 0;
+            c.Day = Today();
+        }
+    }
+
+    private static DateOnly Today() => DateOnly.FromDateTime(DateTime.UtcNow);
+
+    private class TenantCounter
+    {
+        public int SentToday;
+        public DateOnly Day;
     }
 }

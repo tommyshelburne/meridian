@@ -11,7 +11,8 @@ public record TenantOutboundSettings(
     string FromName,
     string? ReplyToAddress,
     string PhysicalAddress,
-    string UnsubscribeBaseUrl);
+    string UnsubscribeBaseUrl,
+    int? DailyCap);
 
 public class TenantOutboundContext
 {
@@ -31,7 +32,7 @@ public class TenantOutboundContext
         _protector = protector;
     }
 
-    public async Task<TenantOutboundSettings?> GetAsync(CancellationToken ct)
+    public virtual async Task<TenantOutboundSettings?> GetAsync(CancellationToken ct)
     {
         if (_loaded) return _cached;
 
@@ -55,7 +56,8 @@ public class TenantOutboundContext
             config.FromName,
             config.ReplyToAddress,
             config.PhysicalAddress,
-            config.UnsubscribeBaseUrl);
+            config.UnsubscribeBaseUrl,
+            config.DailyCap);
 
         return _cached;
     }

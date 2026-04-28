@@ -14,6 +14,7 @@ public class OutboundConfiguration
     public string PhysicalAddress { get; private set; } = string.Empty;
     public string UnsubscribeBaseUrl { get; private set; } = string.Empty;
     public string? EncryptedWebhookSecret { get; private set; }
+    public int? DailyCap { get; private set; }
     public bool IsEnabled { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -102,6 +103,14 @@ public class OutboundConfiguration
 
     public void Disable() { IsEnabled = false; Touch(); }
     public void Enable() { IsEnabled = true; Touch(); }
+
+    public void SetDailyCap(int? cap)
+    {
+        if (cap is < 1)
+            throw new ArgumentOutOfRangeException(nameof(cap), "DailyCap must be null or a positive integer.");
+        DailyCap = cap;
+        Touch();
+    }
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
 

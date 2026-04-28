@@ -15,7 +15,6 @@ public class SequenceEngineService : ISequenceEngine
     private readonly IEmailSender _emailSender;
     private readonly ITemplateRenderer _templateRenderer;
     private readonly IAuditLog _auditLog;
-    private readonly SendThrottleState _throttle;
     private readonly ILogger<SequenceEngineService> _logger;
 
     public SequenceEngineService(
@@ -25,7 +24,6 @@ public class SequenceEngineService : ISequenceEngine
         IEmailSender emailSender,
         ITemplateRenderer templateRenderer,
         IAuditLog auditLog,
-        SendThrottleState throttle,
         ILogger<SequenceEngineService> logger)
     {
         _outreachRepo = outreachRepo;
@@ -34,7 +32,6 @@ public class SequenceEngineService : ISequenceEngine
         _emailSender = emailSender;
         _templateRenderer = templateRenderer;
         _auditLog = auditLog;
-        _throttle = throttle;
         _logger = logger;
     }
 
@@ -44,14 +41,10 @@ public class SequenceEngineService : ISequenceEngine
         var dueEnrollments = await _outreachRepo.GetDueEnrollmentsAsync(tenantId, now, ct);
         var sent = 0;
 
+        var capReached = false;
         foreach (var enrollment in dueEnrollments)
         {
-            if (_throttle.IsCapReached)
-            {
-                _logger.LogWarning("Daily send cap reached. {Remaining} enrollments deferred to next day",
-                    dueEnrollments.Count - sent);
-                break;
-            }
+            if (capReached) break;
 
             try
             {
@@ -117,6 +110,16 @@ public class SequenceEngineService : ISequenceEngine
                 var sendResult = await _emailSender.SendAsync(message, ct);
                 if (!sendResult.IsSuccess)
                 {
+                    if (sendResult.Error == ThrottledEmailSender.CapReachedError)
+                    {
+                        // Per-tenant cap hit; stop processing remaining due enrollments
+                        // for this tenant. The next tick (or next-day reset) picks them up.
+                        _logger.LogWarning("Daily send cap reached for tenant {TenantId}. {Remaining} enrollments deferred",
+                            tenantId, dueEnrollments.Count - sent);
+                        capReached = true;
+                        continue;
+                    }
+
                     if (sendResult.Error == SuppressionFilterEmailSender.SuppressedError)
                         enrollment.MarkUnsubscribed();
 

@@ -5,39 +5,34 @@ namespace Meridian.Unit.Infrastructure;
 
 public class SendThrottleStateTests
 {
+    private static readonly Guid TenantA = Guid.NewGuid();
+    private static readonly Guid TenantB = Guid.NewGuid();
+
     [Fact]
-    public void Starts_at_zero()
+    public void Starts_at_zero_for_unknown_tenant()
     {
-        var throttle = new SendThrottleState { DailyCap = 50 };
-        throttle.SentToday.Should().Be(0);
-        throttle.IsCapReached.Should().BeFalse();
+        var throttle = new SendThrottleState();
+        throttle.GetSentToday(TenantA).Should().Be(0);
     }
 
     [Fact]
-    public void Tracks_sends()
+    public void Tracks_sends_per_tenant()
     {
-        var throttle = new SendThrottleState { DailyCap = 50 };
-        throttle.RecordSend();
-        throttle.RecordSend();
-        throttle.SentToday.Should().Be(2);
+        var throttle = new SendThrottleState();
+        throttle.RecordSend(TenantA);
+        throttle.RecordSend(TenantA);
+        throttle.GetSentToday(TenantA).Should().Be(2);
     }
 
     [Fact]
-    public void Caps_at_daily_limit()
+    public void Counters_are_isolated_between_tenants()
     {
-        var throttle = new SendThrottleState { DailyCap = 3 };
-        throttle.RecordSend();
-        throttle.RecordSend();
-        throttle.RecordSend();
-        throttle.IsCapReached.Should().BeTrue();
-    }
+        var throttle = new SendThrottleState();
+        throttle.RecordSend(TenantA);
+        throttle.RecordSend(TenantA);
+        throttle.RecordSend(TenantB);
 
-    [Fact]
-    public void Not_capped_below_limit()
-    {
-        var throttle = new SendThrottleState { DailyCap = 3 };
-        throttle.RecordSend();
-        throttle.RecordSend();
-        throttle.IsCapReached.Should().BeFalse();
+        throttle.GetSentToday(TenantA).Should().Be(2);
+        throttle.GetSentToday(TenantB).Should().Be(1);
     }
 }
