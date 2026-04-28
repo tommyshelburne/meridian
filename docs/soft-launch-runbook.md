@@ -84,11 +84,7 @@ already exposes UIs for:
 - Source definitions (RSS / REST / HTML / Webhook / SAM.gov / MyBidMatch) ✓
 - CRM connections (Pipedrive / HubSpot / Salesforce) ✓
 - Outbound configuration (Resend API key, From, Compliance footer, DailyCap) ✓
-
-The Portal does **not yet** expose a UI for OutreachSequence or
-OutreachTemplate management. For the v3.0 soft launch, sequences and
-templates must be seeded via SQL or by extending `DevSeedService` for the
-target prod tenant. This is the most important v3.0.x follow-up.
+- OutreachSequence + OutreachTemplate management ✓ (added 2026-04-28, commit `b4bc1ea`)
 
 ### Pre-launch checklist for the chosen tenant
 
@@ -99,10 +95,12 @@ target prod tenant. This is the most important v3.0.x follow-up.
    - Provider = Resend; API key entered (will be encrypted on save).
    - From / FromName / Reply-To / Physical address / Unsubscribe URL all set.
    - DailyCap set to a small number for the first run (5–10).
-4. **OutreachSequence + OutreachTemplate seeded.** No Portal UI yet — see
-   `DevSeedService.SeedOutreachScaffoldAsync` for the shape, or insert via
-   SQL. AgencyType on the sequence should match the agencies your sources
-   ingest, or any sequence will be picked as a fallback.
+4. **OutreachSequence + OutreachTemplate seeded** via Portal /settings/sequences.
+   - Create at least one template with the email body (Liquid tokens like
+     `{{contact.first_name}}`, `{{opportunity.title}}`, `{{agency.name}}`).
+   - Create at least one sequence with steps referencing the template(s).
+   - AgencyType on the sequence should match the agencies your sources
+     ingest; otherwise the first sequence is used as a fallback.
 5. **Resend webhook configured** for bounce + complaint handling. Webhook
    secret stored on the OutboundConfiguration.
 
@@ -130,7 +128,7 @@ To halt sends without redeploying:
 
 | Gap | Impact | Mitigation for v3.0 |
 |---|---|---|
-| No Portal UI for OutreachSequence / OutreachTemplate | Operator can't create sequences without SQL | Seed via SQL or `DevSeedService` for the first tenant |
+| ~~No Portal UI for OutreachSequence / OutreachTemplate~~ | Resolved 2026-04-28 (commit `b4bc1ea`) — Portal /settings/sequences exposes list + create for both | — |
 | `Opportunity` has no `OpportunityType` field | Sequence selection is AgencyType-only | Use one sequence per AgencyType per tenant |
 | No automated migration runner in Worker | Worker assumes Portal has applied migrations | Deploy Portal first, or run `dotnet ef database update` |
 | No prod blue-green script per global SUPREME-0 | Manual deploy only | Document the deploy commands in the deploy runbook (separate doc) |
