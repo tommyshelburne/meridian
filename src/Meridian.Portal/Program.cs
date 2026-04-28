@@ -101,6 +101,7 @@ app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();
 app.MapResendWebhookEndpoints();
 app.MapOutboundConfigEndpoints();
+app.MapSequenceEndpoints();
 app.MapOpportunityEndpoints();
 app.MapEnrichmentEndpoints();
 app.MapDevSeedEndpoints(app.Environment);

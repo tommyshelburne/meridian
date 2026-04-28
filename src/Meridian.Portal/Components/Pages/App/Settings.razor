@@ -39,6 +39,12 @@
     <a href="/app/@Slug/settings/crm">Manage CRM connection →</a>
 </section>
 
+<section class="settings-section">
+    <h2>Outreach sequences</h2>
+    <p>Create email templates and chain them into multi-step outreach sequences. Required before the pipeline can enroll opportunities.</p>
+    <a href="/app/@Slug/settings/sequences">Manage sequences &amp; templates →</a>
+</section>
+
 @code {
     [Parameter] public string Slug { get; set; } = "";
     [SupplyParameterFromQuery] public string? Error { get; set; }

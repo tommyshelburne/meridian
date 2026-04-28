@@ -1,0 +1,224 @@
+@page "/app/{Slug}/settings/sequences"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+@using Meridian.Application.Outreach
+@using Meridian.Domain.Common
+
+<PageTitle>Sequences · Meridian</PageTitle>
+
+<h1>Outreach sequences &amp; templates</h1>
+<p class="page-lede">
+    Templates hold the email body (with Liquid tokens like <code>{{contact.first_name}}</code>).
+    Sequences chain templates into multi-step outreach. The pipeline auto-enrolls
+    new opportunities into a sequence whose AgencyType matches; if no match, the
+    first sequence is used as a fallback.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Saved.</div>
+}
+
+<section class="settings-section">
+    <h2>Templates</h2>
+    @if (_templates is null)
+    {
+        <p>Loading…</p>
+    }
+    else if (_templates.Count == 0)
+    {
+        <p class="meta">No templates yet. Create one below — you'll need at least one before adding a sequence step.</p>
+    }
+    else
+    {
+        <table class="config-table">
+            <thead><tr><th>Name</th><th>Subject</th><th>Version</th><th>Updated</th></tr></thead>
+            <tbody>
+                @foreach (var t in _templates)
+                {
+                    <tr>
+                        <td>@t.Name</td>
+                        <td><code>@t.SubjectTemplate</code></td>
+                        <td>v@t.Version</td>
+                        <td>@t.ModifiedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <details class="create-form">
+        <summary>+ New template</summary>
+        <form method="post" action="/app/@Slug/settings/sequences/templates/create">
+            <AntiforgeryToken />
+            <label>Name
+                <input type="text" name="Name" required maxlength="200" placeholder="Initial outreach" />
+            </label>
+            <label>Subject template
+                <input type="text" name="SubjectTemplate" required
+                       placeholder="Re: {{opportunity.title}}" />
+                <small>Liquid tokens: <code>{{opportunity.title}}</code>, <code>{{agency.name}}</code>, <code>{{contact.first_name}}</code></small>
+            </label>
+            <label>Body
+                <textarea name="BodyTemplate" required rows="8"
+                          placeholder="Hi {{contact.first_name}},&#10;&#10;Saw {{agency.name}} posted &quot;{{opportunity.title}}&quot;..."></textarea>
+                <small>Plain text; the compliance footer is appended automatically.</small>
+            </label>
+            <button type="submit">Create template</button>
+        </form>
+    </details>
+</section>
+
+<section class="settings-section">
+    <h2>Sequences</h2>
+    @if (_sequences is null)
+    {
+        <p>Loading…</p>
+    }
+    else if (_sequences.Count == 0)
+    {
+        <p class="meta">No sequences yet. The pipeline will skip enrollment until at least one exists.</p>
+    }
+    else
+    {
+        <table class="config-table">
+            <thead><tr><th>Name</th><th>Agency</th><th>Type</th><th>Steps</th><th>Last used</th></tr></thead>
+            <tbody>
+                @foreach (var s in _sequences)
+                {
+                    <tr>
+                        <td>@s.Name</td>
+                        <td>@s.AgencyType</td>
+                        <td>@s.OpportunityType</td>
+                        <td>@s.StepCount</td>
+                        <td>@(s.LastUsedAt?.ToString("yyyy-MM-dd HH:mm 'UTC'") ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (_templates is { Count: > 0 })
+    {
+        <details class="create-form">
+            <summary>+ New sequence</summary>
+            <form method="post" action="/app/@Slug/settings/sequences/create">
+                <AntiforgeryToken />
+                <label>Name
+                    <input type="text" name="Name" required maxlength="200" placeholder="State/Local — RFP outreach" />
+                </label>
+                <div class="row two-col">
+                    <label>Agency type
+                        <select name="AgencyType">
+                            @foreach (var t in Enum.GetValues<AgencyType>())
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </label>
+                    <label>Opportunity type
+                        <select name="OpportunityType">
+                            @foreach (var t in Enum.GetValues<OpportunityType>())
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+
+                <p class="meta">Add up to 5 steps. The first is sent immediately on enrollment; later steps wait <code>delayDays</code> after the previous step.</p>
+
+                @for (var i = 1; i <= 5; i++)
+                {
+                    var idx = i;
+                    <fieldset class="step-fieldset">
+                        <legend>Step @idx @(idx == 1 ? "(required)" : "(optional)")</legend>
+                        <div class="row two-col">
+                            <label>Template
+                                <select name="Steps[@(idx-1)].TemplateId">
+                                    <option value="">— skip this step —</option>
+                                    @foreach (var t in _templates!)
+                                    {
+                                        <option value="@t.Id">@t.Name</option>
+                                    }
+                                </select>
+                            </label>
+                            <label>Delay (days)
+                                <input type="number" name="Steps[@(idx-1)].DelayDays" min="0" value="@(idx == 1 ? 0 : (idx - 1) * 3)" />
+                            </label>
+                        </div>
+                        <label>Subject override (optional — falls back to template subject if blank)
+                            <input type="text" name="Steps[@(idx-1)].Subject" placeholder="Re: {{opportunity.title}}" />
+                        </label>
+                        <div class="row two-col">
+                            <label>Send window start (UTC HH:mm)
+                                <input type="time" name="Steps[@(idx-1)].SendWindowStart" value="14:00" />
+                            </label>
+                            <label>Send window end (UTC HH:mm)
+                                <input type="time" name="Steps[@(idx-1)].SendWindowEnd" value="22:00" />
+                            </label>
+                        </div>
+                        <label>Jitter (minutes)
+                            <input type="number" name="Steps[@(idx-1)].JitterMinutes" min="0" value="0" />
+                            <small>Random delay added per send to avoid bursts. 0 = no jitter.</small>
+                        </label>
+                    </fieldset>
+                }
+
+                <button type="submit">Create sequence</button>
+            </form>
+        </details>
+    }
+    else
+    {
+        <p class="meta">Create at least one template above before adding a sequence.</p>
+    }
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+
+    [Inject] private OutreachSequenceService Service { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<TemplateSummary>? _templates;
+    private IReadOnlyList<SequenceSummary>? _sequences;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+        {
+            _templates = await Service.ListTemplatesAsync(tenantId, CancellationToken.None);
+            _sequences = await Service.ListSequencesAsync(tenantId, CancellationToken.None);
+        }
+    }
+}
+
+<style>
+    .settings-section { background: white; border: 1px solid #e3e6ef; border-radius: 10px; padding: 1.5rem; max-width: 56rem; margin-bottom: 1.5rem; }
+    .settings-section h2 { margin: 0 0 1rem; font-size: 1rem; }
+    .settings-section .meta { color: #6a6e82; font-size: 0.85rem; }
+    .config-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    .config-table th, .config-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #eef0f6; text-align: left; font-size: 0.9rem; }
+    .config-table th { font-weight: 600; color: #4b5163; background: #f7f8fc; }
+    .create-form { margin-top: 0.75rem; }
+    .create-form summary { cursor: pointer; padding: 0.4rem 0; color: #2a3552; font-weight: 600; }
+    .create-form form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
+    .create-form label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; }
+    .create-form input, .create-form textarea, .create-form select { padding: 0.55rem 0.7rem; border: 1px solid #cfd3e0; border-radius: 6px; font: inherit; }
+    .create-form textarea { font-family: ui-monospace, SFMono-Regular, monospace; }
+    .create-form .row.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .create-form button { padding: 0.6rem 1rem; background: #2a3552; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; align-self: flex-start; }
+    .step-fieldset { border: 1px solid #e3e6ef; border-radius: 6px; padding: 0.75rem 1rem; }
+    .step-fieldset legend { padding: 0 0.4rem; font-size: 0.85rem; color: #4b5163; font-weight: 600; }
+    .auth-error { padding: 0.75rem 1rem; background: #fdecec; border: 1px solid #f5b3b3; color: #8a1717; border-radius: 6px; margin-bottom: 1rem; }
+    .auth-ok { padding: 0.75rem 1rem; background: #e9f6ec; border: 1px solid #a9d9b3; color: #1f5f2a; border-radius: 6px; margin-bottom: 1rem; }
+</style>

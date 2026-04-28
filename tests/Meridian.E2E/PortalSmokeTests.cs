@@ -36,6 +36,7 @@ public class PortalSmokeTests : IClassFixture<PortalFactory>
     [InlineData("/app/acme/activity")]
     [InlineData("/app/acme/settings")]
     [InlineData("/app/acme/settings/outbound")]
+    [InlineData("/app/acme/settings/sequences")]
     [InlineData("/app/acme/sources")]
     [InlineData("/app/acme/members")]
     public async Task Authorized_pages_redirect_anonymous_users_to_login(string path)
