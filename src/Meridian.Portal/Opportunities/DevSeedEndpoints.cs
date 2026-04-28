@@ -23,6 +23,13 @@ public static class DevSeedEndpoints
             if (!Guid.TryParse(claim, out var tenantId))
                 return Results.Redirect($"/app/{slug}/opportunities?error={Uri.EscapeDataString("Session expired.")}");
 
+            // Seed the outreach scaffold first so the soft-launch dry-run
+            // opportunity has a sequence to enroll into when ProcessingJob
+            // picks it up. Idempotent — safe to re-hit.
+            var scaffold = await seed.SeedOutreachScaffoldAsync(tenantId, ct);
+            if (!scaffold.IsSuccess)
+                return Results.Redirect($"/app/{slug}/opportunities?error={Uri.EscapeDataString(scaffold.Error!)}");
+
             var result = await seed.SeedSampleOpportunitiesAsync(tenantId, ct);
             return result.IsSuccess
                 ? Results.Redirect($"/app/{slug}/opportunities?saved=1")
