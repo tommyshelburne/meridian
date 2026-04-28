@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Meridian.Application.Common;
+using Meridian.Application.Outreach;
 using Meridian.Application.Ports;
 using Meridian.Domain.Audit;
 using Meridian.Domain.Outreach;
@@ -56,7 +57,7 @@ public class SequenceEngineService : ISequenceEngine
                     continue;
                 }
 
-                var steps = JsonSerializer.Deserialize<List<SnapshotStep>>(snapshot.SnapshotJson);
+                var steps = JsonSerializer.Deserialize<List<SequenceStepSnapshot>>(snapshot.SnapshotJson);
                 var currentStep = steps?.FirstOrDefault(s => s.StepNumber == enrollment.CurrentStep);
                 if (currentStep is null)
                 {
@@ -164,7 +165,7 @@ public class SequenceEngineService : ISequenceEngine
         return ServiceResult<int>.Ok(sent);
     }
 
-    private static bool IsWithinSendWindow(SnapshotStep step, DateTimeOffset now)
+    private static bool IsWithinSendWindow(SequenceStepSnapshot step, DateTimeOffset now)
     {
         var timeOfDay = now.TimeOfDay;
         return timeOfDay >= step.SendWindowStart && timeOfDay <= step.SendWindowEnd;
@@ -201,11 +202,3 @@ public class SequenceEngineService : ISequenceEngine
     }
 }
 
-internal record SnapshotStep(
-    int StepNumber,
-    int DelayDays,
-    string Subject,
-    string BodyTemplate,
-    TimeSpan SendWindowStart,
-    TimeSpan SendWindowEnd,
-    int JitterMinutes);
