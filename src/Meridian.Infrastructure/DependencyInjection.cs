@@ -121,6 +121,7 @@ public static class DependencyInjection
         services.AddScoped<ReplyProcessor>();
         services.AddScoped<BounceProcessor>();
         services.AddScoped<OutboundConfigurationService>();
+        services.AddScoped<OutreachSequenceService>();
         services.AddScoped<OpportunityQueueService>();
         services.AddScoped<OpportunityDetailService>();
         services.AddScoped<ManualEnrichmentService>();

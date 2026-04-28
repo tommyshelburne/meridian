@@ -192,6 +192,7 @@ public class ReplyProcessorTests
         public Task<IReadOnlyList<OutreachSequence>> GetSequencesAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<OutreachSequence>>(Array.Empty<OutreachSequence>());
         public Task AddSequenceAsync(OutreachSequence s, CancellationToken ct) => Task.CompletedTask;
         public Task<OutreachTemplate?> GetTemplateByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<OutreachTemplate?>(null);
+        public Task<IReadOnlyList<OutreachTemplate>> GetTemplatesAsync(Guid t, CancellationToken ct) => Task.FromResult<IReadOnlyList<OutreachTemplate>>(Array.Empty<OutreachTemplate>());
         public Task AddTemplateAsync(OutreachTemplate t, CancellationToken ct) => Task.CompletedTask;
         public Task<SequenceSnapshot?> GetSnapshotByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<SequenceSnapshot?>(null);
         public Task AddSnapshotAsync(SequenceSnapshot s, CancellationToken ct) => Task.CompletedTask;

@@ -105,6 +105,7 @@ public class SuppressionFilterEmailSenderTests
         public Task<IReadOnlyList<OutreachSequence>> GetSequencesAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<IReadOnlyList<OutreachSequence>>(Array.Empty<OutreachSequence>());
         public Task AddSequenceAsync(OutreachSequence sequence, CancellationToken ct) => Task.CompletedTask;
         public Task<OutreachTemplate?> GetTemplateByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<OutreachTemplate?>(null);
+        public Task<IReadOnlyList<OutreachTemplate>> GetTemplatesAsync(Guid tenantId, CancellationToken ct) => Task.FromResult<IReadOnlyList<OutreachTemplate>>(Array.Empty<OutreachTemplate>());
         public Task AddTemplateAsync(OutreachTemplate template, CancellationToken ct) => Task.CompletedTask;
         public Task<SequenceSnapshot?> GetSnapshotByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<SequenceSnapshot?>(null);
         public Task AddSnapshotAsync(SequenceSnapshot snapshot, CancellationToken ct) => Task.CompletedTask;

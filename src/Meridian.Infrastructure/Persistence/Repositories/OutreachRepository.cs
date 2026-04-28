@@ -41,6 +41,9 @@ public class OutreachRepository : IOutreachRepository
     public async Task<OutreachTemplate?> GetTemplateByIdAsync(Guid id, CancellationToken ct)
         => await _db.OutreachTemplates.FirstOrDefaultAsync(t => t.Id == id, ct);
 
+    public async Task<IReadOnlyList<OutreachTemplate>> GetTemplatesAsync(Guid tenantId, CancellationToken ct)
+        => await _db.OutreachTemplates.OrderBy(t => t.Name).ToListAsync(ct);
+
     public async Task AddTemplateAsync(OutreachTemplate template, CancellationToken ct)
         => await _db.OutreachTemplates.AddAsync(template, ct);
 

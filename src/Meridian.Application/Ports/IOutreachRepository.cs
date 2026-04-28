@@ -16,6 +16,7 @@ public interface IOutreachRepository
     Task AddSequenceAsync(OutreachSequence sequence, CancellationToken ct);
 
     Task<OutreachTemplate?> GetTemplateByIdAsync(Guid id, CancellationToken ct);
+    Task<IReadOnlyList<OutreachTemplate>> GetTemplatesAsync(Guid tenantId, CancellationToken ct);
     Task AddTemplateAsync(OutreachTemplate template, CancellationToken ct);
 
     Task<SequenceSnapshot?> GetSnapshotByIdAsync(Guid id, CancellationToken ct);
