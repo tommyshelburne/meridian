@@ -83,6 +83,14 @@
             </label>
         </div>
 
+        <div class="row">
+            <label>Daily send cap
+                <input type="number" name="DailyCap" min="1" step="1"
+                       value="@(_summary?.DailyCap?.ToString())" placeholder="(use system default)" />
+                <small>Maximum sends per UTC day for this workspace. Leave blank to use the system default.</small>
+            </label>
+        </div>
+
         <button type="submit">@(_summary is null ? "Create configuration" : "Update")</button>
     </form>
 </section>
@@ -95,6 +103,7 @@
             <dt>Provider</dt><dd>@_summary.ProviderType</dd>
             <dt>API key stored</dt><dd>@(_summary.HasApiKey ? "yes" : "no")</dd>
             <dt>Webhook secret stored</dt><dd>@(_summary.HasWebhookSecret ? "yes" : "no")</dd>
+            <dt>Daily cap</dt><dd>@(_summary.DailyCap?.ToString() ?? "(system default)")</dd>
             <dt>Enabled</dt><dd>@_summary.IsEnabled</dd>
             <dt>Updated</dt><dd>@_summary.UpdatedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
         </dl>

@@ -22,6 +22,14 @@ public static class OutboundConfigEndpoints
             if (!Enum.TryParse<OutboundProviderType>(form.ProviderType, out var providerType))
                 return Results.Redirect($"/app/{slug}/settings/outbound?error={Uri.EscapeDataString("Unknown provider.")}");
 
+            int? dailyCap = null;
+            if (!string.IsNullOrWhiteSpace(form.DailyCap))
+            {
+                if (!int.TryParse(form.DailyCap.Trim(), out var parsed) || parsed < 1)
+                    return Results.Redirect($"/app/{slug}/settings/outbound?error={Uri.EscapeDataString("Daily cap must be a positive integer or blank.")}");
+                dailyCap = parsed;
+            }
+
             var request = new UpsertOutboundRequest(
                 providerType,
                 Blank(form.ApiKey),
@@ -30,7 +38,8 @@ public static class OutboundConfigEndpoints
                 Blank(form.ReplyToAddress),
                 form.PhysicalAddress ?? string.Empty,
                 form.UnsubscribeBaseUrl ?? string.Empty,
-                Blank(form.WebhookSecret));
+                Blank(form.WebhookSecret),
+                dailyCap);
 
             var result = await service.UpsertAsync(tenantId, request, ct);
             return result.IsSuccess
@@ -55,4 +64,5 @@ public class OutboundConfigForm
     public string? PhysicalAddress { get; set; }
     public string? UnsubscribeBaseUrl { get; set; }
     public string? WebhookSecret { get; set; }
+    public string? DailyCap { get; set; }
 }

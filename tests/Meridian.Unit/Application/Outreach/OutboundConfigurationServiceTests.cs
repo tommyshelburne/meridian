@@ -9,21 +9,23 @@ public class OutboundConfigurationServiceTests
 {
     private static readonly Guid TenantId = Guid.NewGuid();
 
-    private static UpsertOutboundRequest ResendRequest(string? apiKey = "rsk_live_123") =>
+    private static UpsertOutboundRequest ResendRequest(string? apiKey = "rsk_live_123", int? dailyCap = null) =>
         new(OutboundProviderType.Resend, apiKey,
             "outreach@vendor.com", "Vendor",
             ReplyToAddress: null,
             "1 Main St, City, ST 00000",
             "https://example.com/u",
-            WebhookSecret: null);
+            WebhookSecret: null,
+            DailyCap: dailyCap);
 
-    private static UpsertOutboundRequest ConsoleRequest() =>
+    private static UpsertOutboundRequest ConsoleRequest(int? dailyCap = null) =>
         new(OutboundProviderType.Console, null,
             "outreach@vendor.com", "Vendor",
             null,
             "1 Main St, City, ST 00000",
             "https://example.com/u",
-            null);
+            null,
+            DailyCap: dailyCap);
 
     [Fact]
     public async Task Get_summary_returns_null_when_no_config_exists()
@@ -140,6 +142,41 @@ public class OutboundConfigurationServiceTests
         var bad = ResendRequest() with { FromAddress = "not-an-email" };
 
         var result = await svc.UpsertAsync(TenantId, bad, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Upsert_round_trips_daily_cap_when_provided()
+    {
+        var (svc, repo, _) = Build();
+
+        var result = await svc.UpsertAsync(TenantId, ResendRequest(dailyCap: 25), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        repo.Stored!.DailyCap.Should().Be(25);
+
+        var summary = await svc.GetSummaryAsync(TenantId, CancellationToken.None);
+        summary!.DailyCap.Should().Be(25);
+    }
+
+    [Fact]
+    public async Task Upsert_clears_daily_cap_when_omitted_on_subsequent_save()
+    {
+        var (svc, repo, _) = Build();
+        await svc.UpsertAsync(TenantId, ResendRequest(dailyCap: 25), CancellationToken.None);
+
+        await svc.UpsertAsync(TenantId, ResendRequest(dailyCap: null), CancellationToken.None);
+
+        repo.Stored!.DailyCap.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Upsert_rejects_zero_or_negative_daily_cap_via_domain_guard()
+    {
+        var (svc, _, _) = Build();
+
+        var result = await svc.UpsertAsync(TenantId, ResendRequest(dailyCap: 0), CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
     }

@@ -12,7 +12,8 @@ public record UpsertOutboundRequest(
     string? ReplyToAddress,
     string PhysicalAddress,
     string UnsubscribeBaseUrl,
-    string? WebhookSecret);
+    string? WebhookSecret,
+    int? DailyCap);
 
 public record OutboundConfigurationSummary(
     OutboundProviderType ProviderType,
@@ -23,6 +24,7 @@ public record OutboundConfigurationSummary(
     string PhysicalAddress,
     string UnsubscribeBaseUrl,
     bool HasWebhookSecret,
+    int? DailyCap,
     bool IsEnabled,
     DateTimeOffset UpdatedAt);
 
@@ -53,6 +55,7 @@ public class OutboundConfigurationService
             config.PhysicalAddress,
             config.UnsubscribeBaseUrl,
             HasWebhookSecret: !string.IsNullOrEmpty(config.EncryptedWebhookSecret),
+            config.DailyCap,
             config.IsEnabled,
             config.UpdatedAt);
     }
@@ -95,6 +98,7 @@ public class OutboundConfigurationService
                     request.PhysicalAddress, request.UnsubscribeBaseUrl,
                     request.ReplyToAddress);
                 created.SetWebhookSecret(encryptedWebhook);
+                created.SetDailyCap(request.DailyCap);
                 await _repo.AddAsync(created, ct);
             }
             else
@@ -103,6 +107,7 @@ public class OutboundConfigurationService
                 existing.UpdateSender(request.FromAddress, request.FromName, request.ReplyToAddress);
                 existing.UpdateCompliance(request.PhysicalAddress, request.UnsubscribeBaseUrl);
                 existing.SetWebhookSecret(encryptedWebhook);
+                existing.SetDailyCap(request.DailyCap);
             }
 
             await _repo.SaveChangesAsync(ct);
