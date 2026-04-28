@@ -90,6 +90,7 @@ app.UseMiddleware<TenantClaimMiddleware>();
 
 app.MapAuthEndpoints();
 app.MapCrmOAuthEndpoints();
+app.MapCrmSettingsEndpoints();
 app.MapSsoSettingsEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();

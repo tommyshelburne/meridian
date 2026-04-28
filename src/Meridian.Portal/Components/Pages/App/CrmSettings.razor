@@ -1,0 +1,152 @@
+@page "/app/{Slug}/settings/crm"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Owner,Admin")]
+@using Meridian.Application.Crm
+@using Meridian.Domain.Common
+
+<PageTitle>CRM · Meridian</PageTitle>
+
+<h1>CRM connection</h1>
+<p class="page-lede">
+    Connect a CRM so triaged opportunities sync as deals and outreach activity is logged
+    against the right contact. One active connection per workspace.
+</p>
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="auth-error" role="alert">@Error</div>
+}
+@if (Saved == "1")
+{
+    <div class="auth-ok" role="status">Saved.</div>
+}
+@if (!string.IsNullOrEmpty(CrmConnected))
+{
+    <div class="auth-ok" role="status">Connected to @CrmConnected.</div>
+}
+
+<section class="settings-section">
+    <h2>Current connection</h2>
+    @if (_summary is null)
+    {
+        <p class="meta">No CRM connected yet. Pick a provider below to start the OAuth flow.</p>
+    }
+    else
+    {
+        <table class="config-table">
+            <tbody>
+                <tr>
+                    <th scope="row">Provider</th>
+                    <td>@_summary.Provider</td>
+                </tr>
+                <tr>
+                    <th scope="row">Status</th>
+                    <td>
+                        @if (_summary.IsActive)
+                        {
+                            <span class="status-pill ok">Active</span>
+                        }
+                        else
+                        {
+                            <span class="status-pill muted">Disconnected</span>
+                        }
+                    </td>
+                </tr>
+                @if (!string.IsNullOrEmpty(_summary.ApiBaseUrl))
+                {
+                    <tr>
+                        <th scope="row">API base URL</th>
+                        <td><code>@_summary.ApiBaseUrl</code></td>
+                    </tr>
+                }
+                <tr>
+                    <th scope="row">Token expires</th>
+                    <td>
+                        @(_summary.ExpiresAt is { } exp
+                            ? exp.ToString("yyyy-MM-dd HH:mm 'UTC'")
+                            : "—")
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Connected</th>
+                    <td>@_summary.CreatedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                </tr>
+                <tr>
+                    <th scope="row">Last update</th>
+                    <td>@_summary.UpdatedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                </tr>
+            </tbody>
+        </table>
+
+        @if (_summary.IsActive)
+        {
+            <form method="post" action="/app/@Slug/settings/crm/disconnect" class="inline-form danger-row"
+                  onsubmit="return confirm('Disconnect from @_summary.Provider? Outreach will continue but new deals will not sync until you reconnect.')">
+                <button type="submit" class="link danger">Disconnect</button>
+            </form>
+        }
+    }
+</section>
+
+@if (_summary?.IsActive == true)
+{
+    <section class="settings-section">
+        <h2>Default pipeline</h2>
+        <p class="meta">
+            Provider-specific pipeline ID for new deals. Leave blank to use the provider's default.
+        </p>
+        <form method="post" action="/app/@Slug/settings/crm/pipeline">
+            <label>Pipeline ID
+                <input type="text" name="pipelineId" value="@_summary.DefaultPipelineId"
+                       placeholder="(provider default)" />
+            </label>
+            <button type="submit">Save</button>
+        </form>
+    </section>
+}
+
+<section class="settings-section">
+    <h2>@(_summary is null ? "Connect a provider" : "Switch provider")</h2>
+    <p class="meta">
+        Connecting a different provider replaces the current connection.
+    </p>
+    <div class="provider-grid">
+        @foreach (var p in _availableProviders)
+        {
+            <a class="provider-card" href="/app/@Slug/crm/connect/@p.Slug">
+                <div class="provider-name">@p.DisplayName</div>
+                <div class="provider-detail">@p.AuthMode</div>
+                <div class="provider-cta">Connect →</div>
+            </a>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Saved { get; set; }
+    [SupplyParameterFromQuery(Name = "crm_connected")] public string? CrmConnected { get; set; }
+
+    [Inject] private CrmConnectionService Service { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private CrmConnectionSummary? _summary;
+
+    private record ProviderOption(string Slug, string DisplayName, string AuthMode);
+
+    private readonly IReadOnlyList<ProviderOption> _availableProviders = new[]
+    {
+        new ProviderOption("pipedrive", "Pipedrive", "OAuth"),
+        new ProviderOption("hubspot", "HubSpot", "OAuth"),
+        new ProviderOption("salesforce", "Salesforce", "OAuth"),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+            _summary = await Service.GetSummaryAsync(tenantId, CancellationToken.None);
+    }
+}

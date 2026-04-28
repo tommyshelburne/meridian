@@ -33,6 +33,12 @@
     <a href="/app/@Slug/settings/sso">Manage SSO providers →</a>
 </section>
 
+<section class="settings-section">
+    <h2>CRM</h2>
+    <p>Connect Pipedrive, HubSpot, or Salesforce so triaged opportunities sync as deals.</p>
+    <a href="/app/@Slug/settings/crm">Manage CRM connection →</a>
+</section>
+
 @code {
     [Parameter] public string Slug { get; set; } = "";
     [SupplyParameterFromQuery] public string? Error { get; set; }
