@@ -1,6 +1,9 @@
 using Meridian.Application.Auth;
 using Meridian.Domain.Auth;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Meridian.Portal.Auth;
 
@@ -17,6 +20,8 @@ public static class SsoSettingsEndpoints
             HttpContext http,
             [FromForm] SsoCreateForm form,
             OidcConfigService service,
+            IOptionsMonitorCache<OpenIdConnectOptions> optionsCache,
+            IAuthenticationSchemeProvider schemeProvider,
             CancellationToken ct) =>
         {
             if (!TryGetTenantId(http, out var tenantId))
@@ -37,46 +42,87 @@ public static class SsoSettingsEndpoints
                 NameClaim: Blank(form.NameClaim));
 
             var result = await service.CreateAsync(tenantId, request, ct);
-            return result.IsSuccess
-                ? Redirect(slug, saved: "1")
-                : Redirect(slug, error: result.Error);
+            if (result.IsSuccess)
+            {
+                InvalidateSchemeCaches(optionsCache, schemeProvider, tenantId, form.ProviderKey ?? "");
+                return Redirect(slug, saved: "1");
+            }
+            return Redirect(slug, error: result.Error);
         });
 
         group.MapPost("/{configId:guid}/rotate-secret", async (
             string slug, Guid configId,
             [FromForm] string newSecret,
             OidcConfigService service,
+            IOptionsMonitorCache<OpenIdConnectOptions> optionsCache,
+            IAuthenticationSchemeProvider schemeProvider,
             CancellationToken ct) =>
         {
             var result = await service.RotateSecretAsync(configId, newSecret ?? "", ct);
-            return result.IsSuccess ? Redirect(slug, saved: "1") : Redirect(slug, error: result.Error);
+            if (result.IsSuccess)
+            {
+                var key = await service.GetSchemeKeyAsync(configId, ct);
+                if (key.HasValue)
+                    InvalidateSchemeCaches(optionsCache, schemeProvider, key.Value.TenantId, key.Value.ProviderKey);
+                return Redirect(slug, saved: "1");
+            }
+            return Redirect(slug, error: result.Error);
         });
 
         group.MapPost("/{configId:guid}/enable", async (
             string slug, Guid configId,
-            OidcConfigService service, CancellationToken ct) =>
+            OidcConfigService service,
+            IOptionsMonitorCache<OpenIdConnectOptions> optionsCache,
+            IAuthenticationSchemeProvider schemeProvider,
+            CancellationToken ct) =>
         {
             await service.SetEnabledAsync(configId, true, ct);
+            var key = await service.GetSchemeKeyAsync(configId, ct);
+            if (key.HasValue)
+                InvalidateSchemeCaches(optionsCache, schemeProvider, key.Value.TenantId, key.Value.ProviderKey);
             return Redirect(slug, saved: "1");
         });
 
         group.MapPost("/{configId:guid}/disable", async (
             string slug, Guid configId,
-            OidcConfigService service, CancellationToken ct) =>
+            OidcConfigService service,
+            IOptionsMonitorCache<OpenIdConnectOptions> optionsCache,
+            IAuthenticationSchemeProvider schemeProvider,
+            CancellationToken ct) =>
         {
             await service.SetEnabledAsync(configId, false, ct);
+            var key = await service.GetSchemeKeyAsync(configId, ct);
+            if (key.HasValue)
+                InvalidateSchemeCaches(optionsCache, schemeProvider, key.Value.TenantId, key.Value.ProviderKey);
             return Redirect(slug, saved: "1");
         });
 
         group.MapPost("/{configId:guid}/delete", async (
             string slug, Guid configId,
-            OidcConfigService service, CancellationToken ct) =>
+            OidcConfigService service,
+            IOptionsMonitorCache<OpenIdConnectOptions> optionsCache,
+            IAuthenticationSchemeProvider schemeProvider,
+            CancellationToken ct) =>
         {
+            // Fetch key before deleting so we still have providerKey after the record is gone.
+            var key = await service.GetSchemeKeyAsync(configId, ct);
+            if (key.HasValue)
+                InvalidateSchemeCaches(optionsCache, schemeProvider, key.Value.TenantId, key.Value.ProviderKey);
             await service.DeleteAsync(configId, ct);
             return Redirect(slug, saved: "1");
         });
 
         return app;
+    }
+
+    private static void InvalidateSchemeCaches(
+        IOptionsMonitorCache<OpenIdConnectOptions> optionsCache,
+        IAuthenticationSchemeProvider schemeProvider,
+        Guid tenantId, string providerKey)
+    {
+        var schemeName = OidcSchemeNames.Format(tenantId, providerKey);
+        optionsCache.TryRemove(schemeName);
+        schemeProvider.RemoveScheme(schemeName);
     }
 
     private static bool TryGetTenantId(HttpContext http, out Guid tenantId)
