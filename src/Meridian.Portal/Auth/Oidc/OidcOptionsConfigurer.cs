@@ -9,8 +9,10 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 namespace Meridian.Portal.Auth.Oidc;
 
 
-// Runs on IOptionsMonitor<OpenIdConnectOptions>.Get(name) — once per scheme name per
-// app lifetime, since the framework caches options by name. Must be registered BEFORE
+// Runs on IOptionsMonitor<OpenIdConnectOptions>.Get(name) — once per uncached scheme
+// name, since the framework caches options by name. SsoSettingsEndpoints calls
+// IOptionsMonitorCache.TryRemove after admin CRUD so the next Get re-invokes this
+// configurer with fresh DB state. Must be registered BEFORE
 // AddOpenIdConnect so it executes before the framework's OpenIdConnectPostConfigureOptions
 // (which validates Authority/ClientId are present and sets up the backchannel).
 //

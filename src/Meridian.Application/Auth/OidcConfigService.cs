@@ -179,6 +179,12 @@ public class OidcConfigService
         return ServiceResult.Ok();
     }
 
+    public async Task<(Guid TenantId, string ProviderKey)?> GetSchemeKeyAsync(Guid configId, CancellationToken ct)
+    {
+        var config = await _repo.GetByIdAsync(configId, ct);
+        return config is null ? null : (config.TenantId, config.ProviderKey);
+    }
+
     private static OidcConfigSummary ToSummary(OidcConfig c) => new(
         c.Id, c.ProviderKey, c.Provider, c.DisplayName, c.Authority,
         c.ClientId, c.Scopes, c.EmailClaim, c.NameClaim, c.IsEnabled, c.UpdatedAt);
