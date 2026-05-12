@@ -103,6 +103,7 @@ app.MapSsoSettingsEndpoints();
 app.MapWorkspaceEndpoints();
 app.MapWebhookIngestEndpoints();
 app.MapResendWebhookEndpoints();
+app.MapPostmarkInboundEndpoints();
 app.MapOutboundConfigEndpoints();
 app.MapSequenceEndpoints();
 app.MapOpportunityEndpoints();
