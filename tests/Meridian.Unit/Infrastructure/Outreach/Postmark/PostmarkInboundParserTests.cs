@@ -230,6 +230,111 @@ public class PostmarkInboundParserTests
         PostmarkInboundParser.Parse(body).Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("auto-replied", true)]
+    [InlineData("auto-generated", true)]
+    [InlineData("auto-replied; from=vacation@example.com", true)]
+    [InlineData("no", false)]
+    public void Auto_submitted_header_classifies_auto_reply(string value, bool expected)
+    {
+        var body = $$"""
+        {
+          "From": "a@b.com",
+          "ToFull": [{ "Email": "r+t@m.app", "MailboxHash": "t" }],
+          "Subject": "Re: Quick question",
+          "Headers": [ { "Name": "Auto-Submitted", "Value": "{{value}}" } ]
+        }
+        """;
+
+        var envelope = PostmarkInboundParser.Parse(body);
+
+        envelope!.Reply.IsAutoReply.Should().Be(expected);
+    }
+
+    [Fact]
+    public void X_autoreply_header_classifies_auto_reply()
+    {
+        const string body = """
+        {
+          "From": "a@b.com",
+          "ToFull": [{ "Email": "r+t@m.app", "MailboxHash": "t" }],
+          "Subject": "Re: Quick question",
+          "Headers": [ { "Name": "X-Autoreply", "Value": "yes" } ]
+        }
+        """;
+
+        var envelope = PostmarkInboundParser.Parse(body);
+
+        envelope!.Reply.IsAutoReply.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("auto_reply", true)]
+    [InlineData("auto-reply", true)]
+    [InlineData("bulk", true)]
+    [InlineData("list", true)]
+    [InlineData("first-class", false)]
+    public void Precedence_header_classifies_auto_reply(string value, bool expected)
+    {
+        var body = $$"""
+        {
+          "From": "a@b.com",
+          "ToFull": [{ "Email": "r+t@m.app", "MailboxHash": "t" }],
+          "Subject": "Re: Quick question",
+          "Headers": [ { "Name": "Precedence", "Value": "{{value}}" } ]
+        }
+        """;
+
+        var envelope = PostmarkInboundParser.Parse(body);
+
+        envelope!.Reply.IsAutoReply.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("Out of Office", true)]
+    [InlineData("Out of the office until Monday", true)]
+    [InlineData("Automatic reply: I am away", true)]
+    [InlineData("Auto-Reply: vacation", true)]
+    [InlineData("Auto Reply", true)]
+    [InlineData("Away from my desk", true)]
+    [InlineData("Re: Out of Office last week", false)]
+    [InlineData("Re: Contact Center RFP", false)]
+    public void Subject_pattern_classifies_auto_reply(string subject, bool expected)
+    {
+        var body = $$"""
+        {
+          "From": "a@b.com",
+          "ToFull": [{ "Email": "r+t@m.app", "MailboxHash": "t" }],
+          "Subject": "{{subject}}",
+          "Headers": []
+        }
+        """;
+
+        var envelope = PostmarkInboundParser.Parse(body);
+
+        envelope!.Reply.IsAutoReply.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Normal_reply_with_no_auto_signals_is_not_classified()
+    {
+        const string body = """
+        {
+          "From": "a@b.com",
+          "ToFull": [{ "Email": "r+t@m.app", "MailboxHash": "t" }],
+          "Subject": "Re: Bid opportunity",
+          "Headers": [
+            { "Name": "Auto-Submitted", "Value": "no" },
+            { "Name": "In-Reply-To", "Value": "<x@y>" }
+          ]
+        }
+        """;
+
+        var envelope = PostmarkInboundParser.Parse(body);
+
+        envelope!.Reply.IsAutoReply.Should().BeFalse();
+    }
+
     [Fact]
     public void Empty_mailbox_hash_left_empty_for_caller_to_handle()
     {

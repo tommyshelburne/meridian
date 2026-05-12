@@ -28,6 +28,7 @@
             <option value="DealCreated" selected="@(EventType == "DealCreated")">DealCreated</option>
             <option value="EmailSent" selected="@(EventType == "EmailSent")">EmailSent</option>
             <option value="ReplyDetected" selected="@(EventType == "ReplyDetected")">ReplyDetected</option>
+            <option value="AutoReplyDetected" selected="@(EventType == "AutoReplyDetected")">AutoReplyDetected</option>
             <option value="HardBounce" selected="@(EventType == "HardBounce")">HardBounce</option>
             <option value="SoftBounce" selected="@(EventType == "SoftBounce")">SoftBounce</option>
             <option value="SpamComplaint" selected="@(EventType == "SpamComplaint")">SpamComplaint</option>
@@ -117,6 +118,7 @@ else
     {
         "EmailSent" or "DealCreated" or "OpportunityScored" => "ok",
         "ReplyDetected" => "info",
+        "AutoReplyDetected" => "neutral",
         "HardBounce" or "SpamComplaint" => "danger",
         "SoftBounce" => "warn",
         _ => "neutral"

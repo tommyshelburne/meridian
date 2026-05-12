@@ -10,6 +10,7 @@ namespace Meridian.Application.Outreach;
 public record DetectedReply(string MessageId, string Subject, DateTimeOffset ReceivedAt, string FromAddress)
 {
     public string? Body { get; init; }
+    public bool IsAutoReply { get; init; }
 }
 
 public class ReplyProcessor
@@ -46,6 +47,25 @@ public class ReplyProcessor
             {
                 summary.Unmatched++;
                 _logger.LogWarning("Unmatched reply from {From}: {Subject}", reply.FromAddress, reply.Subject);
+                continue;
+            }
+
+            if (reply.IsAutoReply)
+            {
+                summary.AutoReplies++;
+                _logger.LogInformation(
+                    "Auto-reply from {From} suppressed; enrollment {EnrollmentId} not halted.",
+                    reply.FromAddress, matched.Activity.EnrollmentId);
+
+                await _auditLog.AppendAsync(AuditEvent.Record(
+                    tenantId, "EmailActivity", matched.Activity.Id, "AutoReplyDetected", "system",
+                    JsonSerializer.Serialize(new
+                    {
+                        reply.FromAddress,
+                        reply.Subject,
+                        reply.ReceivedAt,
+                        matched.MatchStrategy
+                    })), ct);
                 continue;
             }
 
@@ -117,6 +137,7 @@ public record ReplyProcessSummary
 {
     public int MatchedByMessageId { get; set; }
     public int MatchedBySubject { get; set; }
+    public int AutoReplies { get; set; }
     public int Unmatched { get; set; }
-    public int Total => MatchedByMessageId + MatchedBySubject + Unmatched;
+    public int Total => MatchedByMessageId + MatchedBySubject + AutoReplies + Unmatched;
 }

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Meridian.Application.Outreach;
 
 namespace Meridian.Infrastructure.Outreach.Postmark;
@@ -11,6 +12,10 @@ public record PostmarkInboundEnvelope(
 
 public static class PostmarkInboundParser
 {
+    private static readonly Regex AutoReplySubjectPattern = new(
+        @"^\s*(?:auto[\s-]?(?:reply|respond)|automatic\s+reply|out\s+of\s+(?:the\s+)?office|away\s+from\s+(?:my\s+)?(?:office|desk))\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     public static PostmarkInboundEnvelope? Parse(string body)
     {
         if (string.IsNullOrWhiteSpace(body)) return null;
@@ -35,7 +40,13 @@ public static class PostmarkInboundParser
             var inReplyTo = ExtractInReplyTo(root);
             var textBody = ExtractTextBody(root);
 
-            var reply = new DetectedReply(inReplyTo, subject, receivedAt, from) { Body = textBody };
+            var isAutoReply = DetectAutoReply(root, subject);
+
+            var reply = new DetectedReply(inReplyTo, subject, receivedAt, from)
+            {
+                Body = textBody,
+                IsAutoReply = isAutoReply
+            };
             return new PostmarkInboundEnvelope(mailboxHash, toAddress, reply);
         }
     }
@@ -110,6 +121,40 @@ public static class PostmarkInboundParser
         var stripped = GetString(root, "StrippedTextReply");
         if (!string.IsNullOrEmpty(stripped)) return stripped;
         return GetString(root, "TextBody") ?? string.Empty;
+    }
+
+    private static bool DetectAutoReply(JsonElement root, string subject)
+    {
+        if (root.TryGetProperty("Headers", out var headers) && headers.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var header in headers.EnumerateArray())
+            {
+                var name = GetString(header, "Name");
+                var value = GetString(header, "Value")?.Trim();
+                if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(value)) continue;
+
+                // RFC 3834: Auto-Submitted with anything other than "no" indicates automation.
+                if (string.Equals(name, "Auto-Submitted", StringComparison.OrdinalIgnoreCase))
+                {
+                    var token = value.Split(';', 2)[0].Trim();
+                    if (!string.Equals(token, "no", StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+
+                if (string.Equals(name, "X-Autoreply", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(name, "X-Autorespond", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (string.Equals(name, "Precedence", StringComparison.OrdinalIgnoreCase))
+                {
+                    var p = value.ToLowerInvariant();
+                    if (p is "auto_reply" or "auto-reply" or "bulk" or "list" or "junk")
+                        return true;
+                }
+            }
+        }
+
+        return AutoReplySubjectPattern.IsMatch(subject);
     }
 
     private static string? GetString(JsonElement element, string property)

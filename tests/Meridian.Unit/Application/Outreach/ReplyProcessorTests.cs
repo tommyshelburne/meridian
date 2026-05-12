@@ -72,6 +72,71 @@ public class ReplyProcessorTests
     }
 
     [Fact]
+    public async Task Auto_reply_does_not_halt_enrollment()
+    {
+        var (enrollment, activity) = SeedEnrollment();
+        var fakes = new Fakes();
+        fakes.Outreach.SeedActivity(activity);
+        fakes.Outreach.SeedEnrollment(enrollment);
+
+        var processor = new ReplyProcessor(fakes.Outreach, fakes.Contacts, fakes.Audit,
+            NullLogger<ReplyProcessor>.Instance);
+
+        var reply = new DetectedReply(activity.MessageId!, "Out of Office", DateTimeOffset.UtcNow, "rep@vendor.com")
+        {
+            IsAutoReply = true,
+            Body = "I am out of office until next Monday."
+        };
+        var result = await processor.ProcessAsync(TenantId, new[] { reply }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.AutoReplies.Should().Be(1);
+        result.Value.MatchedByMessageId.Should().Be(0);
+        activity.Status.Should().NotBe(EmailStatus.Replied);
+        activity.RepliedAt.Should().BeNull();
+        enrollment.Status.Should().NotBe(EnrollmentStatus.Replied);
+    }
+
+    [Fact]
+    public async Task Auto_reply_emits_AutoReplyDetected_audit_event()
+    {
+        var (enrollment, activity) = SeedEnrollment();
+        var fakes = new Fakes();
+        fakes.Outreach.SeedActivity(activity);
+        fakes.Outreach.SeedEnrollment(enrollment);
+
+        var processor = new ReplyProcessor(fakes.Outreach, fakes.Contacts, fakes.Audit,
+            NullLogger<ReplyProcessor>.Instance);
+
+        var reply = new DetectedReply(activity.MessageId!, "Automatic reply", DateTimeOffset.UtcNow, "rep@vendor.com")
+        {
+            IsAutoReply = true
+        };
+        await processor.ProcessAsync(TenantId, new[] { reply }, CancellationToken.None);
+
+        fakes.Audit.Events.Should().ContainSingle()
+            .Which.EventType.Should().Be("AutoReplyDetected");
+    }
+
+    [Fact]
+    public async Task Unmatched_auto_reply_does_not_increment_AutoReplies_counter()
+    {
+        var fakes = new Fakes();
+        var processor = new ReplyProcessor(fakes.Outreach, fakes.Contacts, fakes.Audit,
+            NullLogger<ReplyProcessor>.Instance);
+
+        var reply = new DetectedReply("orphan", "Out of Office", DateTimeOffset.UtcNow, "stranger@vendor.com")
+        {
+            IsAutoReply = true
+        };
+        var result = await processor.ProcessAsync(TenantId, new[] { reply }, CancellationToken.None);
+
+        result.Value!.Unmatched.Should().Be(1);
+        result.Value.AutoReplies.Should().Be(0);
+        fakes.Audit.Events.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Reply_body_left_null_when_not_provided()
     {
         var (enrollment, activity) = SeedEnrollment();
