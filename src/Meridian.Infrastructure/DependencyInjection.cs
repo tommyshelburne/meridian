@@ -21,6 +21,7 @@ using Meridian.Infrastructure.Crm.HubSpot;
 using Meridian.Infrastructure.Crm.Pipedrive;
 using Meridian.Infrastructure.Crm.Salesforce;
 using Meridian.Infrastructure.Outreach;
+using Meridian.Infrastructure.Outreach.Postmark;
 using Meridian.Infrastructure.Outreach.Resend;
 using Meridian.Infrastructure.Scoring;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +118,7 @@ public static class DependencyInjection
         services.AddSingleton<SendThrottleState>();
         services.Configure<SendThrottleOptions>(configuration.GetSection(SendThrottleOptions.SectionName));
         services.Configure<ResendOptions>(configuration.GetSection(ResendOptions.SectionName));
+        services.Configure<PostmarkInboundOptions>(configuration.GetSection(PostmarkInboundOptions.SectionName));
         services.AddScoped<ISequenceEngine, SequenceEngineService>();
         services.AddScoped<ReplyProcessor>();
         services.AddScoped<BounceProcessor>();
