@@ -7,7 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Meridian.Application.Outreach;
 
-public record DetectedReply(string MessageId, string Subject, DateTimeOffset ReceivedAt, string FromAddress);
+public record DetectedReply(string MessageId, string Subject, DateTimeOffset ReceivedAt, string FromAddress)
+{
+    public string? Body { get; init; }
+}
 
 public class ReplyProcessor
 {
@@ -46,7 +49,7 @@ public class ReplyProcessor
                 continue;
             }
 
-            matched.Activity.RecordReply(reply.ReceivedAt);
+            matched.Activity.RecordReply(reply.ReceivedAt, reply.Body);
 
             var enrollment = await _outreachRepo.GetEnrollmentByIdAsync(matched.Activity.EnrollmentId, ct);
             enrollment?.MarkReplied();
@@ -58,7 +61,8 @@ public class ReplyProcessor
                     reply.FromAddress,
                     reply.Subject,
                     reply.ReceivedAt,
-                    matched.MatchStrategy
+                    matched.MatchStrategy,
+                    bodyLength = reply.Body?.Length ?? 0
                 })), ct);
 
             if (matched.MatchStrategy == "messageId") summary.MatchedByMessageId++;

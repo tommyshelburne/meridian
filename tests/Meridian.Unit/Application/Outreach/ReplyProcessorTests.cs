@@ -51,6 +51,45 @@ public class ReplyProcessorTests
     }
 
     [Fact]
+    public async Task Persists_reply_body_on_activity_when_provided()
+    {
+        var (enrollment, activity) = SeedEnrollment();
+        var fakes = new Fakes();
+        fakes.Outreach.SeedActivity(activity);
+        fakes.Outreach.SeedEnrollment(enrollment);
+
+        var processor = new ReplyProcessor(fakes.Outreach, fakes.Contacts, fakes.Audit,
+            NullLogger<ReplyProcessor>.Instance);
+
+        var reply = new DetectedReply(activity.MessageId!, "Re: Original", DateTimeOffset.UtcNow, "rep@vendor.com")
+        {
+            Body = "Sounds good — happy to chat this afternoon."
+        };
+        var result = await processor.ProcessAsync(TenantId, new[] { reply }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        activity.ReplyBody.Should().Be("Sounds good — happy to chat this afternoon.");
+    }
+
+    [Fact]
+    public async Task Reply_body_left_null_when_not_provided()
+    {
+        var (enrollment, activity) = SeedEnrollment();
+        var fakes = new Fakes();
+        fakes.Outreach.SeedActivity(activity);
+        fakes.Outreach.SeedEnrollment(enrollment);
+
+        var processor = new ReplyProcessor(fakes.Outreach, fakes.Contacts, fakes.Audit,
+            NullLogger<ReplyProcessor>.Instance);
+
+        var reply = new DetectedReply(activity.MessageId!, "Re: Original", DateTimeOffset.UtcNow, "rep@vendor.com");
+        await processor.ProcessAsync(TenantId, new[] { reply }, CancellationToken.None);
+
+        activity.ReplyBody.Should().BeNull();
+        activity.Status.Should().Be(EmailStatus.Replied);
+    }
+
+    [Fact]
     public async Task Falls_back_to_subject_match_when_message_id_unknown()
     {
         var contact = Contact.Create(TenantId, "Reply Sender",
@@ -168,6 +207,10 @@ public class ReplyProcessorTests
 
         public Task<EmailActivity?> GetEmailByMessageIdAsync(Guid tenantId, string messageId, CancellationToken ct)
             => Task.FromResult(_activities.FirstOrDefault(a => a.MessageId == messageId));
+
+        public Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(
+            Guid tenantId, int take, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>>(Array.Empty<Meridian.Application.Outreach.ReplyListItem>());
 
         public Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid tenantId, string normalizedSubject, Guid contactId, CancellationToken ct)
             => Task.FromResult(_activities

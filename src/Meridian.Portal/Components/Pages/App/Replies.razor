@@ -1,0 +1,76 @@
+@page "/app/{Slug}/replies"
+@layout AppLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using Meridian.Application.Outreach
+@using Meridian.Application.Ports
+
+<PageTitle>Replies · Meridian</PageTitle>
+
+<h1>Replies</h1>
+<p class="page-lede">
+    Inbound replies attributed to sequence sends. The sequence is automatically halted for these contacts.
+</p>
+
+@if (_replies is null)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_replies.Count == 0)
+{
+    <div class="empty-state">
+        <p>No replies have arrived yet.</p>
+        <p class="muted">When a prospect replies to a sequence email, it lands here and the sequence is halted for that contact.</p>
+    </div>
+}
+else
+{
+    <ol class="reply-list">
+        @foreach (var r in _replies)
+        {
+            <li class="reply-item">
+                <div class="reply-meta">
+                    <time datetime="@r.RepliedAt.ToString("o")">@r.RepliedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</time>
+                    <span class="step-badge">Step @r.StepNumber</span>
+                </div>
+                <div class="reply-headline">
+                    <strong>@r.ContactName</strong>
+                    @if (!string.IsNullOrWhiteSpace(r.ContactEmail))
+                    {
+                        <span class="contact-email">&lt;@r.ContactEmail&gt;</span>
+                    }
+                    <span class="reply-subject">@r.Subject</span>
+                </div>
+                <div class="reply-opportunity">
+                    <a href="/app/@Slug/opportunities/@r.OpportunityId">@r.OpportunityTitle</a>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(r.ReplyBody))
+                {
+                    <pre class="reply-body">@r.ReplyBody</pre>
+                }
+                else
+                {
+                    <p class="muted small">No body captured.</p>
+                }
+            </li>
+        }
+    </ol>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    [Inject] private IOutreachRepository OutreachRepo { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthState { get; set; } = default!;
+
+    private IReadOnlyList<ReplyListItem>? _replies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var tid = state.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantIdClaim)?.Value;
+        if (Guid.TryParse(tid, out var tenantId))
+        {
+            _replies = await OutreachRepo.GetRecentRepliesAsync(tenantId, take: 100, ct: CancellationToken.None);
+        }
+    }
+}

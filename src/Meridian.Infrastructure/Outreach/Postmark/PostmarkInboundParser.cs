@@ -7,8 +7,7 @@ namespace Meridian.Infrastructure.Outreach.Postmark;
 public record PostmarkInboundEnvelope(
     string MailboxHash,
     string ToAddress,
-    DetectedReply Reply,
-    string TextBody);
+    DetectedReply Reply);
 
 public static class PostmarkInboundParser
 {
@@ -36,8 +35,8 @@ public static class PostmarkInboundParser
             var inReplyTo = ExtractInReplyTo(root);
             var textBody = ExtractTextBody(root);
 
-            var reply = new DetectedReply(inReplyTo, subject, receivedAt, from);
-            return new PostmarkInboundEnvelope(mailboxHash, toAddress, reply, textBody);
+            var reply = new DetectedReply(inReplyTo, subject, receivedAt, from) { Body = textBody };
+            return new PostmarkInboundEnvelope(mailboxHash, toAddress, reply);
         }
     }
 

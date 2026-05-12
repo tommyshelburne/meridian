@@ -181,6 +181,7 @@ internal class FakeOutreachRepository : IOutreachRepository
     public Task<EmailActivity?> GetEmailByMessageIdAsync(Guid t, string m, CancellationToken ct) => Task.FromResult<EmailActivity?>(null);
     public Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid t, string s, Guid c, CancellationToken ct) => Task.FromResult<EmailActivity?>(null);
     public Task AddEmailActivityAsync(EmailActivity a, CancellationToken ct) => Task.CompletedTask;
+    public Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(Guid t, int take, CancellationToken ct) => Task.FromResult<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>>(Array.Empty<Meridian.Application.Outreach.ReplyListItem>());
     public Task<bool> IsSuppressedAsync(Guid t, string e, CancellationToken ct) => Task.FromResult(false);
     public Task AddSuppressionAsync(SuppressionEntry e, CancellationToken ct) => Task.CompletedTask;
     public Task<IReadOnlyList<OutreachEnrollment>> GetActiveEnrollmentsForContactAsync(Guid t, Guid c, CancellationToken ct) => Task.FromResult<IReadOnlyList<OutreachEnrollment>>(Array.Empty<OutreachEnrollment>());

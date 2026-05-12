@@ -16,6 +16,7 @@ public class EmailActivity
     public string? MessageId { get; private set; }
     public EmailStatus Status { get; private set; }
     public DateTimeOffset? RepliedAt { get; private set; }
+    public string? ReplyBody { get; private set; }
     public DateTimeOffset? BouncedAt { get; private set; }
     public string? BouncedReason { get; private set; }
 
@@ -47,10 +48,11 @@ public class EmailActivity
         };
     }
 
-    public void RecordReply(DateTimeOffset repliedAt)
+    public void RecordReply(DateTimeOffset repliedAt, string? body = null)
     {
         Status = EmailStatus.Replied;
         RepliedAt = repliedAt;
+        if (!string.IsNullOrWhiteSpace(body)) ReplyBody = body;
     }
 
     public void RecordBounce(DateTimeOffset bouncedAt, string reason)

@@ -67,7 +67,7 @@ public class PostmarkInboundParserTests
 
         var envelope = PostmarkInboundParser.Parse(body);
 
-        envelope!.TextBody.Should().Be("Just the reply");
+        envelope!.Reply.Body.Should().Be("Just the reply");
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class PostmarkInboundParserTests
 
         var envelope = PostmarkInboundParser.Parse(body);
 
-        envelope!.TextBody.Should().Be("Whole message");
+        envelope!.Reply.Body.Should().Be("Whole message");
     }
 
     [Fact]

@@ -286,6 +286,7 @@ public class BounceProcessorTests
         public Task<EmailActivity?> GetEmailByMessageIdAsync(Guid t, string m, CancellationToken ct) => Task.FromResult<EmailActivity?>(null);
         public Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid t, string s, Guid c, CancellationToken ct) => Task.FromResult<EmailActivity?>(null);
         public Task AddEmailActivityAsync(EmailActivity a, CancellationToken ct) => Task.CompletedTask;
+        public Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(Guid t, int take, CancellationToken ct) => Task.FromResult<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>>(Array.Empty<Meridian.Application.Outreach.ReplyListItem>());
     }
 
     private class FakeAuditLog : IAuditLog

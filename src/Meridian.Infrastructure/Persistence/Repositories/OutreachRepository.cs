@@ -1,3 +1,4 @@
+using Meridian.Application.Outreach;
 using Meridian.Application.Ports;
 using Meridian.Domain.Common;
 using Meridian.Domain.Outreach;
@@ -64,6 +65,32 @@ public class OutreachRepository : IOutreachRepository
 
     public async Task AddEmailActivityAsync(EmailActivity activity, CancellationToken ct)
         => await _db.EmailActivities.AddAsync(activity, ct);
+
+    public async Task<IReadOnlyList<ReplyListItem>> GetRecentRepliesAsync(
+        Guid tenantId, int take, CancellationToken ct)
+    {
+        var rows = await (
+            from activity in _db.EmailActivities.IgnoreQueryFilters()
+            where activity.RepliedAt != null && activity.TenantId == tenantId
+            join contact in _db.Contacts.IgnoreQueryFilters() on activity.ContactId equals contact.Id
+            join opportunity in _db.Opportunities.IgnoreQueryFilters() on activity.OpportunityId equals opportunity.Id
+            where contact.TenantId == tenantId && opportunity.TenantId == tenantId
+            orderby activity.RepliedAt descending
+            select new ReplyListItem(
+                activity.Id,
+                opportunity.Id,
+                opportunity.Title,
+                contact.Id,
+                contact.FullName,
+                contact.Email,
+                activity.Subject,
+                activity.StepNumber,
+                activity.RepliedAt!.Value,
+                activity.ReplyBody)
+        ).Take(take).ToListAsync(ct);
+
+        return rows;
+    }
 
     public async Task<bool> IsSuppressedAsync(Guid tenantId, string email, CancellationToken ct)
     {
