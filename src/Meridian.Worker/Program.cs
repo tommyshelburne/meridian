@@ -34,7 +34,10 @@ builder.Services.AddMeridianInfrastructure(connectionString, builder.Configurati
 // pointed at a shared volume); otherwise the Portal-encrypted secrets are
 // unreadable here. Local dev uses default ephemeral storage which is fine
 // because secrets aren't persisted across restarts in dev anyway.
-builder.Services.AddDataProtection().SetApplicationName("Meridian");
+var dpBuilder = builder.Services.AddDataProtection().SetApplicationName("Meridian");
+var dpKeyDir = builder.Configuration["DataProtection:KeyDirectory"];
+if (!string.IsNullOrWhiteSpace(dpKeyDir))
+    dpBuilder.PersistKeysToFileSystem(new DirectoryInfo(dpKeyDir));
 
 // Dev-only enricher swap so the soft-launch dry-run produces a contact
 // without needing real SAM.gov / USASpending API keys. The real enrichers
