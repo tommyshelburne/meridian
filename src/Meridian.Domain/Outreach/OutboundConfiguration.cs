@@ -11,6 +11,7 @@ public class OutboundConfiguration
     public string FromAddress { get; private set; } = string.Empty;
     public string FromName { get; private set; } = string.Empty;
     public string? ReplyToAddress { get; private set; }
+    public string? InboundDomain { get; private set; }
     public string PhysicalAddress { get; private set; } = string.Empty;
     public string UnsubscribeBaseUrl { get; private set; } = string.Empty;
     public string? EncryptedWebhookSecret { get; private set; }
@@ -29,10 +30,13 @@ public class OutboundConfiguration
         string fromName,
         string physicalAddress,
         string unsubscribeBaseUrl,
-        string? replyToAddress = null)
+        string? replyToAddress = null,
+        string? inboundDomain = null)
     {
         ValidateAddress(fromAddress, nameof(fromAddress));
         if (replyToAddress is not null) ValidateAddress(replyToAddress, nameof(replyToAddress));
+        if (inboundDomain is not null && !OutboundReplyAddress.IsValidDomain(inboundDomain))
+            throw new ArgumentException($"'{inboundDomain}' is not a valid inbound domain.", nameof(inboundDomain));
         if (string.IsNullOrWhiteSpace(fromName))
             throw new ArgumentException("FromName is required.", nameof(fromName));
         if (string.IsNullOrWhiteSpace(physicalAddress))
@@ -52,6 +56,7 @@ public class OutboundConfiguration
             FromAddress = fromAddress.Trim(),
             FromName = fromName.Trim(),
             ReplyToAddress = replyToAddress?.Trim(),
+            InboundDomain = inboundDomain?.Trim(),
             PhysicalAddress = physicalAddress.Trim(),
             UnsubscribeBaseUrl = unsubscribeBaseUrl.Trim(),
             IsEnabled = true,
@@ -76,16 +81,19 @@ public class OutboundConfiguration
         Touch();
     }
 
-    public void UpdateSender(string fromAddress, string fromName, string? replyToAddress = null)
+    public void UpdateSender(string fromAddress, string fromName, string? replyToAddress = null, string? inboundDomain = null)
     {
         ValidateAddress(fromAddress, nameof(fromAddress));
         if (replyToAddress is not null) ValidateAddress(replyToAddress, nameof(replyToAddress));
+        if (inboundDomain is not null && !OutboundReplyAddress.IsValidDomain(inboundDomain))
+            throw new ArgumentException($"'{inboundDomain}' is not a valid inbound domain.", nameof(inboundDomain));
         if (string.IsNullOrWhiteSpace(fromName))
             throw new ArgumentException("FromName is required.", nameof(fromName));
 
         FromAddress = fromAddress.Trim();
         FromName = fromName.Trim();
         ReplyToAddress = replyToAddress?.Trim();
+        InboundDomain = inboundDomain?.Trim();
         Touch();
     }
 

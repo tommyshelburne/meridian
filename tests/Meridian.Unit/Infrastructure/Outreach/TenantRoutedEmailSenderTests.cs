@@ -97,6 +97,28 @@ public class TenantRoutedEmailSenderTests
             "Test Co, 1 Main St", "https://example.com/u",
             replyToAddress: "reply@vendor.com");
 
+    private static OutboundConfiguration ResendConfigWithInboundDomain() =>
+        OutboundConfiguration.Create(TenantId, OutboundProviderType.Resend, "encrypted-rsk-live",
+            "resend@vendor.com", "Resend Sender",
+            "Test Co, 1 Main St", "https://example.com/u",
+            replyToAddress: "fallback@vendor.com",
+            inboundDomain: "reply.meridian.app");
+
+    [Fact]
+    public async Task Resend_reply_to_uses_composed_address_when_inbound_domain_set()
+    {
+        var harness = Harness.Build(ResendConfigWithInboundDomain());
+
+        var result = await harness.Router.SendAsync(Msg(), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var body = harness.LastResendBody!;
+        using var doc = JsonDocument.Parse(body);
+        doc.RootElement.GetProperty("reply_to").GetString()
+            .Should().Be("replies+acme@reply.meridian.app",
+                "InboundDomain on the config should override the static ReplyToAddress so that Postmark inbound routes by mailbox-hash → tenant slug");
+    }
+
     private class Harness
     {
         public TenantRoutedEmailSender Router { get; private set; } = null!;
@@ -114,8 +136,9 @@ public class TenantRoutedEmailSenderTests
             harness._repo = repo;
 
             var tenantContext = new StubTenantContext(TenantId);
+            var tenantRepo = new StubTenantRepository(TenantId, "acme");
             var protector = new PrefixProtector("decrypted-");
-            var context = new TenantOutboundContext(repo, tenantContext, protector);
+            var context = new TenantOutboundContext(repo, tenantRepo, tenantContext, protector);
 
             var resendHandler = new FakeHandler(req =>
             {
@@ -148,6 +171,30 @@ public class TenantRoutedEmailSenderTests
         public Guid TenantId { get; private set; }
         public StubTenantContext(Guid id) => TenantId = id;
         public void SetTenant(Guid id) => TenantId = id;
+    }
+
+    private class StubTenantRepository : ITenantRepository
+    {
+        private readonly Tenant _tenant;
+
+        public StubTenantRepository(Guid id, string slug)
+        {
+            _tenant = Tenant.Create($"Tenant {slug}", slug);
+            typeof(Tenant).GetProperty(nameof(Tenant.Id))!
+                .SetValue(_tenant, id);
+        }
+
+        public Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct)
+            => Task.FromResult<Tenant?>(_tenant.Id == id ? _tenant : null);
+        public Task<Tenant?> GetBySlugAsync(string slug, CancellationToken ct)
+            => Task.FromResult<Tenant?>(_tenant.Slug == slug ? _tenant : null);
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct) => Task.FromResult(false);
+        public Task<IReadOnlyList<Tenant>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Tenant>>(Array.Empty<Tenant>());
+        public Task<IReadOnlyList<Tenant>> GetActiveTenantsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Tenant>>(new[] { _tenant });
+        public Task AddAsync(Tenant tenant, CancellationToken ct) => Task.CompletedTask;
+        public Task SaveChangesAsync(CancellationToken ct) => Task.CompletedTask;
     }
 
     private class PrefixProtector : ISecretProtector
