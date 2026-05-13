@@ -1,4 +1,5 @@
 using Meridian.Infrastructure.Persistence;
+using Meridian.Portal;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace Meridian.E2E;
 /// Boots the Portal in-process with EF Core's InMemory provider. Each instance
 /// gets its own database name so xUnit class fixtures don't leak state.
 /// </summary>
-public class PortalFactory : WebApplicationFactory<Program>
+public class PortalFactory : WebApplicationFactory<PortalAssemblyMarker>
 {
     private readonly string _dbName = $"e2e-{Guid.NewGuid():N}";
 

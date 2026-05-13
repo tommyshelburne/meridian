@@ -268,4 +268,4 @@ To halt sends without redeploying:
 | `Opportunity` has no `OpportunityType` field | Sequence selection is AgencyType-only | Use one sequence per AgencyType per tenant |
 | No automated migration runner in Worker | Worker assumes Portal has applied migrations | Deploy Portal first, or run `dotnet ef database update` |
 | No prod blue-green script per global SUPREME-0 | Manual deploy only | Document the deploy commands in the deploy runbook (separate doc) |
-| No health endpoint on Worker | Can't probe Worker liveness from external monitoring | Tail logs; Slice 3 adds `/health` |
+| ~~No health endpoint on Worker~~ | Resolved 2026-05-13 (Slice 3) — `GET /health` on the Worker's listen URL (default `http://localhost:9090/health`) returns the global health-response shape | — |
