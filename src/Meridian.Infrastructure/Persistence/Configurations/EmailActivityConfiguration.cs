@@ -23,6 +23,7 @@ public class EmailActivityConfiguration : IEntityTypeConfiguration<EmailActivity
         builder.Property(e => e.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(30);
         builder.Property(e => e.RepliedAt).HasColumnName("replied_at");
         builder.Property(e => e.ReplyBody).HasColumnName("reply_body");
+        builder.Property(e => e.SuppressionReason).HasColumnName("suppression_reason").HasMaxLength(50);
         builder.Property(e => e.BouncedAt).HasColumnName("bounced_at");
         builder.Property(e => e.BouncedReason).HasColumnName("bounced_reason").HasMaxLength(500);
 

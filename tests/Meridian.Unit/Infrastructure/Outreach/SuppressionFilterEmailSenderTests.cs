@@ -112,7 +112,7 @@ public class SuppressionFilterEmailSenderTests
         public Task<EmailActivity?> GetEmailByMessageIdAsync(Guid tenantId, string messageId, CancellationToken ct) => Task.FromResult<EmailActivity?>(null);
         public Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid tenantId, string normalizedSubject, Guid contactId, CancellationToken ct) => Task.FromResult<EmailActivity?>(null);
         public Task AddEmailActivityAsync(EmailActivity activity, CancellationToken ct) => Task.CompletedTask;
-        public Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(Guid t, int take, CancellationToken ct) => Task.FromResult<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>>(Array.Empty<Meridian.Application.Outreach.ReplyListItem>());
+        public Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(Guid t, int take, CancellationToken ct, bool includeSuppressed = false) => Task.FromResult<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>>(Array.Empty<Meridian.Application.Outreach.ReplyListItem>());
         public Task SaveChangesAsync(CancellationToken ct) => Task.CompletedTask;
     }
 }

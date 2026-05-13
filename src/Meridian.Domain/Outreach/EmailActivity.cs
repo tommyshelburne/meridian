@@ -17,8 +17,11 @@ public class EmailActivity
     public EmailStatus Status { get; private set; }
     public DateTimeOffset? RepliedAt { get; private set; }
     public string? ReplyBody { get; private set; }
+    public string? SuppressionReason { get; private set; }
     public DateTimeOffset? BouncedAt { get; private set; }
     public string? BouncedReason { get; private set; }
+
+    public bool IsSuppressed => !string.IsNullOrEmpty(SuppressionReason);
 
     private EmailActivity() { }
 
@@ -53,6 +56,15 @@ public class EmailActivity
         Status = EmailStatus.Replied;
         RepliedAt = repliedAt;
         if (!string.IsNullOrWhiteSpace(body)) ReplyBody = body;
+    }
+
+    public void RecordSuppressedReply(DateTimeOffset repliedAt, string? body, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("SuppressionReason is required.", nameof(reason));
+        RepliedAt = repliedAt;
+        if (!string.IsNullOrWhiteSpace(body)) ReplyBody = body;
+        SuppressionReason = reason.Trim();
     }
 
     public void RecordBounce(DateTimeOffset bouncedAt, string reason)
