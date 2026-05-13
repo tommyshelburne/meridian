@@ -20,16 +20,37 @@ Hetzner CPX31 (4 vCPU / 8 GB RAM / 160 GB), Ubuntu 24.04 LTS, on the
 operator's Tailnet at `100.99.141.72`. Worker + Portal co-locate on this
 single host for v3.0. Splitting hosts is a v3.1 concern.
 
+**Co-tenant: openclaw.** Meridian is the second app on this box. As of
+2026-05-13 the openclaw stack runs Next.js on :3000 fronted by nginx
+on :80, plus PostgreSQL 17 on :5432 (loopback) and Redis on :6379/:6380.
+Meridian uses the same Postgres instance (different db + role), reuses
+nginx as its reverse proxy (different server block), and binds Portal
+to :5000 + Worker to :9090 — all of which were free on 2026-05-13.
+Re-run the host inventory in Phase 1 below to confirm before deploy.
+
 ## Prerequisites on the host
 
 ```bash
-# .NET 10 runtime
+# Confirm what's already there (do NOT install duplicates):
+ss -tlnp                              # which ports are bound
+systemctl is-active nginx             # expect: active
+systemctl is-active postgresql@17-main  # expect: active (or @18 if newer)
+psql --version
+dotnet --info | head -5
+
+# Install only what's missing. On burrow as of 2026-05-13:
+# - .NET 10 SDK: already there (10.0.107)
+# - PostgreSQL: 17.x already there — DO NOT install 18, use existing
+# - nginx: already there — DO NOT install Caddy
+# If any of these are missing on your target host:
+
+# .NET 10 runtime (if missing)
 wget https://dot.net/v1/dotnet-install.sh
 sudo bash dotnet-install.sh --channel 10.0 --runtime aspnetcore --install-dir /opt/dotnet
 sudo ln -s /opt/dotnet/dotnet /usr/local/bin/dotnet
 
-# Postgres 18
-sudo apt-get install -y postgresql-18
+# Postgres 17+ (if missing — 17 is fine, EF Core + pgvector both support it)
+sudo apt-get install -y postgresql
 
 # Shared DataProtection volume
 sudo mkdir -p /var/lib/meridian/dp-keys
