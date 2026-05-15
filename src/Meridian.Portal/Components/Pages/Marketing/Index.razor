@@ -185,15 +185,15 @@
 </section>
 
 <section class="cta-final mkt-section">
-    <div class="mkt-container cta-final-inner">
-        <div>
+    <div class="mkt-container">
+        <div class="cta-final-inner">
             <h2>Ready to stop missing pursuits?</h2>
             <p>Fifteen minutes to wire it up. The pipeline pays for itself the first month you
             don't miss a window.</p>
-        </div>
-        <div class="cta-final-buttons">
-            <a class="mkt-btn mkt-btn-primary mkt-btn-lg" href="mailto:hello@meridianbd.dev?subject=Meridian%20demo">Get a demo</a>
-            <a class="mkt-btn mkt-btn-secondary mkt-btn-lg" href="/pricing">See pricing</a>
+            <div class="cta-final-buttons">
+                <a class="mkt-btn mkt-btn-primary mkt-btn-lg" href="mailto:hello@meridianbd.dev?subject=Meridian%20demo">Get a demo</a>
+                <a class="mkt-btn mkt-btn-secondary mkt-btn-lg" href="/pricing">See pricing</a>
+            </div>
         </div>
     </div>
 </section>
@@ -326,7 +326,7 @@
     .score-ring {
         width: 116px; height: 116px;
         border-radius: 50%;
-        background: conic-gradient(var(--accent) 0% 87%, var(--line) 87% 100%);
+        background: conic-gradient(var(--accent) 0% 87%, var(--line-strong) 87% 100%);
         display: grid; place-items: center;
         position: relative;
     }
@@ -334,7 +334,10 @@
         width: 90px; height: 90px;
         background: var(--surface);
         border-radius: 50%;
-        display: grid; place-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         gap: 0;
         text-align: center;
     }
@@ -348,7 +351,8 @@
     .score-denom {
         font-size: 11px;
         color: var(--ink-3);
-        margin-top: 2px;
+        line-height: 1;
+        margin-top: 1px;
     }
     .score-verdict {
         margin-top: 10px;
@@ -409,6 +413,7 @@
         padding: 3px 8px;
         border-radius: 999px;
         color: var(--ink);
+        white-space: nowrap;
     }
 
     /* ---------- strip ---------- */
@@ -551,17 +556,17 @@
         max-width: 880px;
         text-align: center;
     }
-    .quote {
+    .quote-band .quote {
         font-size: 26px;
         line-height: 1.4;
         letter-spacing: -0.015em;
         font-weight: 450;
         margin: 0 0 24px;
-        color: var(--bg);
+        color: #FBFAF7;
     }
     .quote-meta {
         font-size: 14px;
-        color: rgba(250, 250, 247, 0.6);
+        color: rgba(250, 250, 247, 0.82);
         display: inline-flex;
         gap: 12px;
     }
@@ -569,12 +574,13 @@
 
     /* ---------- final cta ---------- */
     .cta-final-inner {
-        display: grid;
-        grid-template-columns: 1.4fr 1fr;
-        gap: 64px;
-        align-items: center;
-        background: var(--paper);
+        text-align: center;
         padding: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        background: var(--paper);
         border-radius: var(--radius-lg);
         border: 1px solid var(--line);
     }
@@ -586,13 +592,13 @@
         font-size: 16px;
         color: var(--ink-2);
         margin: 0;
-        max-width: 480px;
+        max-width: 520px;
     }
     .cta-final-buttons {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
-        justify-content: flex-end;
+        justify-content: center;
     }
 
     @@media (max-width: 960px) {
