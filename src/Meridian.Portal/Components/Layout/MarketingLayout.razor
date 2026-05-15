@@ -14,6 +14,15 @@
                 <a href="/about">About</a>
                 <a href="/help">Docs</a>
             </nav>
+            <details class="mkt-menu">
+                <summary>Menu</summary>
+                <nav class="mkt-menu-panel" aria-label="Primary mobile">
+                    <a href="/features">Features</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/about">About</a>
+                    <a href="/help">Docs</a>
+                </nav>
+            </details>
             <div class="mkt-header-cta">
                 <AuthorizeView>
                     <Authorized>
@@ -169,6 +178,54 @@
         transition: color 120ms ease;
     }
     .mkt-nav a:hover { color: var(--ink); }
+
+    /* ---------- mobile disclosure menu ---------- */
+    .mkt-menu {
+        display: none;
+        position: relative;
+    }
+    .mkt-menu > summary {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 12px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        background: var(--surface);
+    }
+    .mkt-menu > summary::-webkit-details-marker { display: none; }
+    .mkt-menu > summary:hover { border-color: var(--ink); }
+    .mkt-menu-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        min-width: 180px;
+        padding: 6px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-card);
+        z-index: 60;
+    }
+    .mkt-menu-panel a {
+        color: var(--ink-2);
+        text-decoration: none;
+        font-size: 14.5px;
+        font-weight: 500;
+        padding: 9px 10px;
+        border-radius: 6px;
+    }
+    .mkt-menu-panel a:hover {
+        color: var(--ink);
+        background: var(--paper);
+    }
+
     .mkt-header-cta {
         margin-left: auto;
         display: inline-flex;
@@ -346,6 +403,7 @@
     }
     @@media (max-width: 720px) {
         .mkt-nav { display: none; }
+        .mkt-menu { display: block; }
         .mkt-footer-inner { grid-template-columns: 1fr; gap: 40px; }
         .mkt-footer-cols { grid-template-columns: repeat(2, 1fr); }
         .mkt-footer-base { flex-direction: column; gap: 8px; }
