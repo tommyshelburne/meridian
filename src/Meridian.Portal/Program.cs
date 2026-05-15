@@ -114,19 +114,6 @@ app.MapEnrichmentEndpoints();
 app.MapDevSeedEndpoints(app.Environment);
 app.MapSourceEndpoints();
 
-// Root route: redirect unauth → /login, authed → /app/{slug}/dashboard.
-// Replaces the default Blazor template Home page that shipped with the
-// scaffold. Must come BEFORE MapRazorComponents so it preempts the router.
-app.MapGet("/", (HttpContext http) =>
-{
-    if (http.User.Identity?.IsAuthenticated != true)
-        return Results.Redirect("/login");
-    var slug = http.User.FindFirst(Meridian.Portal.Auth.ClaimsBuilder.TenantSlugClaim)?.Value;
-    return string.IsNullOrEmpty(slug)
-        ? Results.Redirect("/login")
-        : Results.Redirect($"/app/{slug}/dashboard");
-});
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
