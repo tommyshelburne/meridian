@@ -68,10 +68,32 @@
         </div>
 
         <div class="row">
-            <label>Reply-to (optional)
+            <label>Reply-to (optional, fallback)
                 <input type="email" name="ReplyToAddress" value="@(_summary?.ReplyToAddress)" />
+                <small>Used only when no Inbound domain is set below.</small>
             </label>
         </div>
+
+        <div class="row">
+            <label>Inbound domain (for Postmark Inbound reply routing)
+                <input type="text" name="InboundDomain" value="@(_summary?.InboundDomain)"
+                       placeholder="reply.meridian.app" />
+                <small>
+                    Verified domain in Postmark's inbound server. Meridian composes the per-tenant
+                    Reply-To as <code>replies+&lt;tenant-slug&gt;&#64;&lt;inbound-domain&gt;</code>;
+                    Postmark routes the inbound webhook by the slug in the address. Leave blank if
+                    you're using the legacy Reply-to field above.
+                </small>
+            </label>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_summary?.InboundDomain))
+        {
+            <div class="preview-card">
+                <strong>Replies will land at:</strong>
+                <code>@($"replies+{Slug}@{_summary!.InboundDomain!}")</code>
+            </div>
+        }
 
         <div class="row">
             <label>Physical mailing address (CAN-SPAM)
@@ -113,6 +135,7 @@
         <h2>Current state</h2>
         <dl>
             <dt>Provider</dt><dd>@_summary.ProviderType</dd>
+            <dt>Inbound domain</dt><dd>@(_summary.InboundDomain ?? "(not set — replies won't route)")</dd>
             <dt>API key stored</dt><dd>@(_summary.HasApiKey ? "yes" : "no")</dd>
             <dt>Webhook secret stored</dt><dd>@(_summary.HasWebhookSecret ? "yes" : "no")</dd>
             <dt>Daily cap</dt><dd>@(_summary.DailyCap?.ToString() ?? "(system default)")</dd>

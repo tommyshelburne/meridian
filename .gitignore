@@ -46,3 +46,10 @@ bld/
 ## Test results
 TestResults/
 coverage/
+
+## Publish output
+publish/
+
+## Playwright MCP traces and ad-hoc screenshots
+.playwright-mcp/
+landing-*.png

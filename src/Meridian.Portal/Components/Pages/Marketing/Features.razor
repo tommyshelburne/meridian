@@ -1,0 +1,284 @@
+@page "/features"
+@layout Meridian.Portal.Components.Layout.MarketingLayout
+
+<PageTitle>Features · Meridian</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="Multi-source ingestion, eight-dimension scoring, sequenced outreach via your own email and CRM. The Meridian feature surface." />
+    <meta property="og:title" content="Features · Meridian" />
+    <meta property="og:description" content="Ingest, score, reach — without changing your email or CRM." />
+</HeadContent>
+
+<section class="page-hero">
+    <div class="mkt-container">
+        <span class="eyebrow">Features</span>
+        <h1>Built to fit your pursuit stack — not replace it.</h1>
+        <p class="lead">
+            Meridian doesn't ask you to migrate off your CRM, change email providers, or train a
+            black-box AI on your win history. It plugs into the stack you've already paid for and
+            does the work between sources, scoring, and sequenced outreach.
+        </p>
+    </div>
+</section>
+
+<section class="feat mkt-section mkt-section-tight">
+    <div class="mkt-container">
+        <div class="feat-row">
+            <div class="feat-copy">
+                <span class="eyebrow">01 · Ingest</span>
+                <h2>Every procurement source, one normalized stream.</h2>
+                <p>Connect the federal, state, and local sources you actually pursue. Meridian
+                handles auth, rate-limits, schema drift, and dedup — so the opportunity stream
+                you score against is clean, even when SAM.gov is having a bad day.</p>
+                <ul class="bullet-list">
+                    <li><strong>SAM.gov</strong> — full opportunity feed with attachment metadata</li>
+                    <li><strong>USASpending</strong> — historical awards and contracting officer history</li>
+                    <li><strong>State portals</strong> — including MyBidMatch (Utah), with the pattern to add others</li>
+                    <li><strong>RSS &amp; Atom</strong> — for the long tail of agency bulletin boards</li>
+                    <li><strong>REST APIs</strong> — point it at any JSON endpoint, map fields with the wizard</li>
+                    <li><strong>Inbound webhooks</strong> — push opportunities in from anywhere</li>
+                </ul>
+            </div>
+            <aside class="feat-visual">
+                <div class="vis-card">
+                    <div class="vis-card-head">Active sources · acme-defense</div>
+                    <ul class="vis-source-list">
+                        <li><span class="dot ok"></span>SAM.gov<span class="vis-pulse">324 new today</span></li>
+                        <li><span class="dot ok"></span>USASpending<span class="vis-pulse">historical</span></li>
+                        <li><span class="dot ok"></span>MyBidMatch Utah<span class="vis-pulse">12 new today</span></li>
+                        <li><span class="dot ok"></span>GovWin RSS<span class="vis-pulse">8 new today</span></li>
+                        <li><span class="dot warn"></span>DoD SBIR REST<span class="vis-pulse">rate-limited · retrying</span></li>
+                        <li><span class="dot ok"></span>Pentagon webhook<span class="vis-pulse">live</span></li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <div class="feat-row feat-row-reverse">
+            <div class="feat-copy">
+                <span class="eyebrow">02 · Score</span>
+                <h2>Eight dimensions. Transparent math. No black box.</h2>
+                <p>Every opportunity gets a 0–100 fit score that decomposes into eight visible
+                dimensions. Tune the weights to your win profile and watch the pipeline rescore
+                in real time. The math is auditable — defend the score to your principal, your
+                proposal lead, or your board.</p>
+                <ul class="bullet-list">
+                    <li><strong>NAICS alignment</strong> — match against your registered codes</li>
+                    <li><strong>Set-aside fit</strong> — small-business, 8(a), WOSB, SDVOSB, HUBZone</li>
+                    <li><strong>Contract size band</strong> — calibrated to the dollar ranges you win</li>
+                    <li><strong>Geographic match</strong> — distance + region preferences</li>
+                    <li><strong>Agency history</strong> — your win rate with this contracting agency</li>
+                    <li><strong>CO activity</strong> — contracting officer responsiveness signal</li>
+                    <li><strong>Response window</strong> — time-to-deadline math</li>
+                    <li><strong>Competition risk</strong> — incumbent presence, prior award patterns</li>
+                </ul>
+            </div>
+            <aside class="feat-visual">
+                <div class="vis-weights">
+                    <div class="vis-card-head">Scoring weights · default</div>
+                    <div class="weight-row"><span>NAICS</span><input type="range" min="0" max="100" value="80" disabled /><span class="num">0.80</span></div>
+                    <div class="weight-row"><span>Set-aside</span><input type="range" min="0" max="100" value="75" disabled /><span class="num">0.75</span></div>
+                    <div class="weight-row"><span>Dollar band</span><input type="range" min="0" max="100" value="60" disabled /><span class="num">0.60</span></div>
+                    <div class="weight-row"><span>Geography</span><input type="range" min="0" max="100" value="55" disabled /><span class="num">0.55</span></div>
+                    <div class="weight-row"><span>Agency hist.</span><input type="range" min="0" max="100" value="65" disabled /><span class="num">0.65</span></div>
+                    <div class="weight-row"><span>CO activity</span><input type="range" min="0" max="100" value="40" disabled /><span class="num">0.40</span></div>
+                    <div class="weight-row"><span>Window</span><input type="range" min="0" max="100" value="50" disabled /><span class="num">0.50</span></div>
+                    <div class="weight-row"><span>Competition</span><input type="range" min="0" max="100" value="55" disabled /><span class="num">0.55</span></div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="feat-row">
+            <div class="feat-copy">
+                <span class="eyebrow">03 · Reach</span>
+                <h2>Sequenced outbound, through your own email and CRM.</h2>
+                <p>Meridian sends through your sending domain on Resend or Postmark, writes
+                pursuit state into your CRM, and detects replies — including the noisy
+                out-of-office auto-replies that used to halt your sequences. You stay in
+                pursuit. The CRM stays canonical.</p>
+                <ul class="bullet-list">
+                    <li><strong>Multi-step sequences</strong> — templated, with per-step delays and conditionals</li>
+                    <li><strong>Reply routing</strong> — inbound webhook from Postmark, mailbox-hash addressing</li>
+                    <li><strong>OOO detection</strong> — auto-replies don't pause the sequence</li>
+                    <li><strong>Daily caps</strong> — per-tenant throttle so you don't get a domain reputation hit</li>
+                    <li><strong>CRM sync</strong> — Pipedrive, HubSpot, Salesforce, all bi-directional</li>
+                    <li><strong>Bounce handling</strong> — Svix-verified webhooks, suppressed addresses tracked</li>
+                </ul>
+            </div>
+            <aside class="feat-visual">
+                <div class="vis-card">
+                    <div class="vis-card-head">Sequence · Hill AFB sustainment</div>
+                    <ol class="vis-steps">
+                        <li><span class="step-pill done">SENT</span><div><strong>Day 0</strong> · Intro outreach to contracting officer</div></li>
+                        <li><span class="step-pill done">SENT</span><div><strong>Day 5</strong> · Follow-up with capability statement attachment</div></li>
+                        <li><span class="step-pill active">QUEUED</span><div><strong>Day 12</strong> · Final outreach + escalation to small business office</div></li>
+                    </ol>
+                    <div class="vis-card-foot">
+                        <span class="vis-mini">2 replies routed · 1 OOO suppressed</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+
+<section class="cta-band">
+    <div class="mkt-container cta-band-inner">
+        <h2>Wire it up in fifteen minutes.</h2>
+        <a class="mkt-btn mkt-btn-primary mkt-btn-lg" href="mailto:hello@meridianbd.dev?subject=Meridian%20demo">Get a demo</a>
+    </div>
+</section>
+
+<style>
+    .mkt-section.mkt-section-tight { padding: 72px 0; }
+    .feat-row {
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: 64px;
+        align-items: start;
+        padding: 56px 0;
+        border-top: 1px solid var(--line);
+    }
+    .feat-row:first-child { border-top: none; }
+    .feat-row-reverse > .feat-copy { order: 2; }
+    .feat-row-reverse > .feat-visual { order: 1; }
+    .feat-copy h2 {
+        font-size: 38px;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        font-weight: 650;
+        margin: 0 0 16px;
+    }
+    .feat-copy p {
+        margin: 0 0 20px;
+        font-size: 16.5px;
+        line-height: 1.6;
+        color: var(--ink-2);
+        max-width: 560px;
+    }
+    .bullet-list {
+        list-style: none; margin: 0; padding: 0;
+        display: grid; gap: 8px;
+    }
+    .bullet-list li {
+        padding: 10px 0 10px 22px;
+        position: relative;
+        border-top: 1px solid var(--line);
+        font-size: 14.5px;
+        color: var(--ink-2);
+    }
+    .bullet-list li:first-child { border-top: none; }
+    .bullet-list li::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 600;
+    }
+    .bullet-list strong { color: var(--ink); font-weight: 600; }
+
+    .feat-visual { display: flex; justify-content: center; }
+    .vis-card, .vis-weights {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        padding: 22px 24px;
+        width: 100%;
+        max-width: 420px;
+        font-size: 14px;
+    }
+    .vis-card-head {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+    .vis-source-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .vis-source-list li {
+        display: grid;
+        grid-template-columns: 12px 1fr auto;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-top: 1px solid var(--line);
+        font-size: 13.5px;
+    }
+    .vis-source-list li:first-child { border-top: none; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.ok { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+    .dot.warn { background: var(--warn); box-shadow: 0 0 0 3px rgba(184, 84, 30, 0.12); }
+    .vis-pulse {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink-3);
+    }
+
+    .vis-weights .weight-row {
+        display: grid;
+        grid-template-columns: 96px 1fr 48px;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 0;
+        font-size: 13px;
+        color: var(--ink-2);
+    }
+    .vis-weights input[type=range] {
+        appearance: none;
+        height: 4px;
+        background: var(--line);
+        border-radius: 2px;
+        outline: none;
+    }
+    .vis-weights input[type=range]::-webkit-slider-thumb {
+        appearance: none;
+        width: 12px; height: 12px; border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        border: 2px solid var(--surface);
+    }
+    .vis-weights .num {
+        text-align: right;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink);
+    }
+
+    .vis-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .vis-steps li {
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 10px 0;
+        border-top: 1px solid var(--line);
+    }
+    .vis-steps li:first-child { border-top: none; }
+    .vis-steps div { font-size: 13.5px; color: var(--ink-2); }
+    .vis-steps strong { color: var(--ink); font-weight: 600; }
+    .step-pill {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 999px;
+        text-align: center;
+    }
+    .step-pill.done { background: var(--accent-tint); color: var(--accent); }
+    .step-pill.active { background: var(--paper); color: var(--ink); border: 1px solid var(--line-strong); }
+    .vis-card-foot {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+    }
+    .vis-mini { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-3); }
+
+    @@media (max-width: 960px) {
+        .feat-row { grid-template-columns: 1fr; gap: 32px; }
+        .feat-row-reverse > .feat-copy { order: 1; }
+        .feat-row-reverse > .feat-visual { order: 2; }
+    }
+</style>

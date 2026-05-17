@@ -13,6 +13,7 @@ public class OutboundConfigurationServiceTests
         new(OutboundProviderType.Resend, apiKey,
             "outreach@vendor.com", "Vendor",
             ReplyToAddress: null,
+            InboundDomain: null,
             "1 Main St, City, ST 00000",
             "https://example.com/u",
             WebhookSecret: null,
@@ -21,6 +22,7 @@ public class OutboundConfigurationServiceTests
     private static UpsertOutboundRequest ConsoleRequest(int? dailyCap = null) =>
         new(OutboundProviderType.Console, null,
             "outreach@vendor.com", "Vendor",
+            null,
             null,
             "1 Main St, City, ST 00000",
             "https://example.com/u",
@@ -144,6 +146,22 @@ public class OutboundConfigurationServiceTests
         var result = await svc.UpsertAsync(TenantId, bad, CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Upsert_round_trips_inbound_domain_to_entity_and_summary()
+    {
+        var (svc, repo, _) = Build();
+
+        var result = await svc.UpsertAsync(TenantId,
+            ResendRequest() with { InboundDomain = "reply.meridian.app" },
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        repo.Stored!.InboundDomain.Should().Be("reply.meridian.app");
+
+        var summary = await svc.GetSummaryAsync(TenantId, CancellationToken.None);
+        summary!.InboundDomain.Should().Be("reply.meridian.app");
     }
 
     [Fact]

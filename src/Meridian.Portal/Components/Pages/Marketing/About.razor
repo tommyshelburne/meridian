@@ -1,0 +1,108 @@
+@page "/about"
+@layout Meridian.Portal.Components.Layout.MarketingLayout
+
+<PageTitle>About · Meridian</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="Meridian was built because government procurement is too important — and too slow — to leave to spreadsheets." />
+    <meta property="og:title" content="About · Meridian" />
+    <meta property="og:description" content="Built for the pursuit teams who actually read the FAR." />
+</HeadContent>
+
+<section class="page-hero">
+    <div class="mkt-container">
+        <span class="eyebrow">About</span>
+        <h1>Built for the pursuit teams<br/>who actually read the FAR.</h1>
+        <p class="lead">
+            Government procurement is the largest distribution channel in the United States, and
+            most contractors pursue it with a spreadsheet, a few SAM.gov tabs, and a half-broken
+            CRM workflow. Meridian was built to do the boring work between those tools — without
+            asking you to migrate off any of them.
+        </p>
+    </div>
+</section>
+
+<section class="prose mkt-section mkt-section-tight">
+    <div class="mkt-container">
+        <div class="prose-inner">
+        <h2>Why we built this</h2>
+        <p>
+            The work of pursuing federal, state, and local contracts is mostly attention management.
+            There are thousands of solicitations published every day; the ones that actually fit your
+            shop are a tiny fraction; the response windows are short; and the difference between
+            winning and missing is often whether you saw the post in time.
+        </p>
+        <p>
+            Tools exist for parts of this — bid boards, CRMs, sequence senders — but the work between
+            them is still human. Someone is still copying solicitation numbers into spreadsheets.
+            Someone is still pasting contracting officer emails into Mailchimp. Someone is still
+            scoring opportunities in their head and forgetting which ones they decided to pursue.
+        </p>
+        <p>
+            Meridian closes the loop between the source, the score, and the outreach — and does it
+            without asking you to abandon the tools you already pay for.
+        </p>
+
+        <h2>How we built it</h2>
+        <p>
+            Meridian is multi-tenant by design. Every tenant brings their own ingestion sources,
+            their own email sending domain, and their own CRM. There is no "Meridian email" sitting
+            between you and the contracting officer; there is no anchor customer whose configuration
+            is hard-coded in our defaults.
+        </p>
+        <p>
+            Scoring is deterministic. No LLM in the path between an opportunity and its score. We
+            do this because BD teams need to defend the score — to the principal who hired them, to
+            the proposal team they're assigning, to the board that wants to see win rates. A score
+            that comes out of a black box can't be defended; one with eight visible dimensions can.
+        </p>
+        <p>
+            We use a small modern stack — ASP.NET Core 10 with EF Core and PostgreSQL — and we run
+            it on hardware we own. No serverless cold starts, no opaque vendor lock-in. Tenant data
+            is logically isolated through row-level filters, and DataProtection-managed secrets sit
+            on a shared keyring between the Portal and the background Worker.
+        </p>
+
+        <h2>Who we work with</h2>
+        <p>
+            Small-to-mid government contractors pursuing federal, state, and local awards. BD-leads
+            and proposal managers who already know the FAR and just need their attention to scale.
+            Primes whose pursuit pipeline is too wide for spreadsheets but who don't need the
+            five-figure-per-seat enterprise platforms.
+        </p>
+
+        <h2>What's next</h2>
+        <p>
+            More state portals. Tone-adapted outreach via pgvector RAG. A capability-statement
+            generator that pulls from your historical wins. SSO for the primes who need it (already
+            shipping; OIDC schemes are per-tenant). And a public API for the teams who want to wire
+            Meridian into their existing capture management workflows.
+        </p>
+        </div>
+    </div>
+</section>
+
+<section class="cta-band">
+    <div class="mkt-container cta-band-inner">
+        <h2>Want to see the workspace?</h2>
+        <a class="mkt-btn mkt-btn-primary mkt-btn-lg" href="mailto:hello@meridianbd.dev?subject=Meridian%20demo">Get a demo</a>
+    </div>
+</section>
+
+<style>
+    .mkt-section.mkt-section-tight { padding: 72px 0; }
+    .prose-inner { max-width: 720px; }
+    .prose-inner h2 {
+        font-size: 28px;
+        margin: 48px 0 16px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+    }
+    .prose-inner h2:first-child { margin-top: 0; }
+    .prose-inner p {
+        font-size: 16.5px;
+        line-height: 1.65;
+        color: var(--ink-2);
+        margin: 0 0 18px;
+    }
+</style>

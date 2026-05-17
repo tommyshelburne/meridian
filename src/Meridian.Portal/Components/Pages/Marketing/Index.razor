@@ -1,0 +1,618 @@
+@page "/"
+@layout Meridian.Portal.Components.Layout.MarketingLayout
+
+<PageTitle>Meridian · Procurement outreach, scored and sequenced</PageTitle>
+<HeadContent>
+    <meta name="description"
+          content="Meridian ingests every federal, state, and local procurement source, scores every opportunity on eight dimensions, and runs your outbound through your own email and CRM." />
+    <meta property="og:title" content="Meridian · Procurement outreach, scored and sequenced" />
+    <meta property="og:description"
+          content="Stop hand-triaging the federal pipeline. Multi-source ingestion, deterministic scoring, sequenced outreach — through the email and CRM you already use." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://meridianbd.dev/" />
+</HeadContent>
+
+<section class="hero">
+    <div class="mkt-container hero-inner">
+        <div class="hero-copy">
+            <span class="eyebrow">Procurement outreach platform</span>
+            <h1>Stop hand-triaging<br/>the federal pipeline.</h1>
+            <p class="lead">
+                Meridian ingests every federal, state, and local government procurement source —
+                scores each opportunity on <strong>eight transparent dimensions</strong> — and runs
+                your outbound through the email and CRM you already use.
+            </p>
+            <div class="hero-cta">
+                <a class="mkt-btn mkt-btn-primary mkt-btn-lg" href="mailto:hello@meridianbd.dev?subject=Meridian%20demo">
+                    Get a demo
+                </a>
+                <a class="mkt-btn mkt-btn-secondary mkt-btn-lg" href="/signup">
+                    Create a workspace
+                </a>
+            </div>
+            <div class="hero-meta">
+                <span class="hero-meta-dot"></span>
+                Live with contractors pursuing federal, state, and local awards
+            </div>
+        </div>
+
+        <aside class="scorecard" aria-label="Example opportunity scorecard">
+            <div class="scorecard-top">
+                <div class="scorecard-tag">SAM.gov · Department of Defense</div>
+                <h3 class="scorecard-title">AFSO 21 Lean &amp; Continuous Improvement Support</h3>
+                <div class="scorecard-sub">Hill AFB, UT · 75th Air Base Wing · Solicitation FA8224-26-R-0042</div>
+            </div>
+            <div class="scorecard-body">
+                <div class="scorecard-score">
+                    <div class="score-ring" aria-label="Fit score 87 out of 100">
+                        <div class="score-ring-inner">
+                            <span class="score-num">87</span>
+                            <span class="score-denom">/ 100</span>
+                        </div>
+                    </div>
+                    <div class="score-verdict">Strong fit · pursue</div>
+                </div>
+                <div class="scorecard-dims">
+                    <div class="dim"><span>NAICS alignment</span><span class="dim-bar"><span style="width:92%"></span></span><span class="dim-val">92</span></div>
+                    <div class="dim"><span>Set-aside fit</span><span class="dim-bar"><span style="width:88%"></span></span><span class="dim-val">88</span></div>
+                    <div class="dim"><span>Contract size band</span><span class="dim-bar"><span style="width:85%"></span></span><span class="dim-val">85</span></div>
+                    <div class="dim"><span>Geographic match</span><span class="dim-bar"><span style="width:95%"></span></span><span class="dim-val">95</span></div>
+                    <div class="dim"><span>Agency history</span><span class="dim-bar dim-warn"><span style="width:70%"></span></span><span class="dim-val">70</span></div>
+                    <div class="dim"><span>CO activity</span><span class="dim-bar dim-warn"><span style="width:60%"></span></span><span class="dim-val">60</span></div>
+                    <div class="dim"><span>Response window</span><span class="dim-bar"><span style="width:90%"></span></span><span class="dim-val">90</span></div>
+                    <div class="dim"><span>Competition risk</span><span class="dim-bar"><span style="width:78%"></span></span><span class="dim-val">78</span></div>
+                </div>
+            </div>
+            <div class="scorecard-foot">
+                <span>Next: queued for outreach sequence "Hill AFB sustainment"</span>
+                <span class="scorecard-chip">3-step · 14 days</span>
+            </div>
+        </aside>
+    </div>
+</section>
+
+<section class="strip">
+    <div class="mkt-container strip-inner">
+        <span class="strip-label">Connects to</span>
+        <ul class="strip-list">
+            <li>SAM.gov</li>
+            <li>USASpending</li>
+            <li>MyBidMatch (Utah)</li>
+            <li>RSS feeds</li>
+            <li>REST APIs</li>
+            <li>Inbound webhooks</li>
+            <li>Pipedrive</li>
+            <li>HubSpot</li>
+            <li>Salesforce</li>
+            <li>Resend</li>
+            <li>Postmark</li>
+        </ul>
+    </div>
+</section>
+
+<section class="features mkt-section">
+    <div class="mkt-container">
+        <div class="section-head">
+            <span class="eyebrow">What it does</span>
+            <h2>Three jobs, no glue work between them.</h2>
+        </div>
+        <div class="features-grid">
+            <article class="feature">
+                <div class="feature-num">01</div>
+                <h3>Ingest</h3>
+                <p>Pull from ten source types into one normalized opportunity stream. Add a new
+                source — federal, state, RSS, or REST — without writing code.</p>
+                <ul class="feature-list">
+                    <li>SAM.gov + USASpending out of the box</li>
+                    <li>State portals (MyBidMatch Utah included)</li>
+                    <li>RSS, REST, and inbound webhooks for everything else</li>
+                </ul>
+            </article>
+            <article class="feature feature-accent">
+                <div class="feature-num">02</div>
+                <h3>Score</h3>
+                <p>Every opportunity gets an eight-dimension score with the math in plain view.
+                No black-box LLM. Tune weights to your win profile.</p>
+                <ul class="feature-list">
+                    <li>NAICS, set-aside, dollar band, geography</li>
+                    <li>Agency history, CO activity, timeline, competition</li>
+                    <li>Auditable breakdown — defend the score to anyone</li>
+                </ul>
+            </article>
+            <article class="feature">
+                <div class="feature-num">03</div>
+                <h3>Reach</h3>
+                <p>Multi-step sequences through your own outbound stack. Replies route back to
+                the right pursuit. OOO auto-replies don't halt the sequence.</p>
+                <ul class="feature-list">
+                    <li>Resend or Postmark — your sending domain</li>
+                    <li>Pipedrive · HubSpot · Salesforce sync</li>
+                    <li>Per-tenant daily caps and throttles</li>
+                </ul>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="how mkt-section">
+    <div class="mkt-container">
+        <div class="section-head">
+            <span class="eyebrow">How it works</span>
+            <h2>Connect once. Tune once. Reach forever.</h2>
+        </div>
+        <ol class="how-steps">
+            <li>
+                <span class="how-step-num">1</span>
+                <div>
+                    <h3>Connect your sources, email, and CRM</h3>
+                    <p>OAuth into Pipedrive, HubSpot, or Salesforce. Verify your sending domain
+                    with Resend or Postmark. Add any procurement source — federal, state, RSS, or REST.
+                    No migration; nothing changes upstream.</p>
+                </div>
+            </li>
+            <li>
+                <span class="how-step-num">2</span>
+                <div>
+                    <h3>Tune scoring to your win profile</h3>
+                    <p>Move sliders. Eight dimensions, weighted to your business. See every
+                    opportunity rescore in real time — and review the auditable math behind every score.</p>
+                </div>
+            </li>
+            <li>
+                <span class="how-step-num">3</span>
+                <div>
+                    <h3>Launch sequences and watch the pipeline fill</h3>
+                    <p>Sequence templates send through your email. Replies — including the noisy
+                    out-of-office variants — land back in Meridian and your CRM. You stay in pursuit, not in your inbox.</p>
+                </div>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section class="quote-band">
+    <div class="mkt-container quote-band-inner">
+        <p class="quote">
+            "We were tracking forty solicitations in spreadsheets and missing half the response
+            windows. Meridian scored them, sequenced the contacting officers, and got us in front
+            of two pursuits we would have skipped."
+        </p>
+        <div class="quote-meta">
+            <span class="quote-name">BD Lead</span>
+            <span class="quote-org">$8M federal sustainment contractor</span>
+        </div>
+    </div>
+</section>
+
+<section class="cta-final mkt-section">
+    <div class="mkt-container">
+        <div class="cta-final-inner">
+            <h2>Ready to stop missing pursuits?</h2>
+            <p>Fifteen minutes to wire it up. The pipeline pays for itself the first month you
+            don't miss a window.</p>
+            <div class="cta-final-buttons">
+                <a class="mkt-btn mkt-btn-primary mkt-btn-lg" href="mailto:hello@meridianbd.dev?subject=Meridian%20demo">Get a demo</a>
+                <a class="mkt-btn mkt-btn-secondary mkt-btn-lg" href="/pricing">See pricing</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .mkt h2 {
+        font-size: 44px;
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+        font-weight: 650;
+        text-wrap: balance;
+    }
+    .mkt h3 {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+    }
+
+    /* ---------- hero ---------- */
+    .hero {
+        padding: 88px 0 64px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero::before {
+        content: "";
+        position: absolute;
+        inset: -200px 30% -200px -200px;
+        background:
+            radial-gradient(circle at 30% 30%, rgba(15, 79, 58, 0.06), transparent 60%),
+            radial-gradient(circle at 70% 70%, rgba(200, 232, 213, 0.4), transparent 60%);
+        z-index: 0;
+        pointer-events: none;
+    }
+    .hero-inner {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        gap: 56px;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+    .hero-copy h1 {
+        font-size: 56px;
+        line-height: 1.05;
+        letter-spacing: -0.035em;
+        font-weight: 650;
+        color: var(--ink);
+        margin: 12px 0 24px;
+    }
+    .lead {
+        font-size: 19px;
+        line-height: 1.55;
+        color: var(--ink-2);
+        margin: 0 0 32px;
+        max-width: 540px;
+    }
+    .lead strong { color: var(--ink); font-weight: 600; }
+    .hero-cta {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+    }
+    .hero-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13.5px;
+        color: var(--ink-3);
+    }
+    .hero-meta-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-tint);
+    }
+
+    /* ---------- scorecard ---------- */
+    .scorecard {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        font-size: 14px;
+        transform: translateY(0);
+        position: relative;
+    }
+    .scorecard::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius-lg);
+        pointer-events: none;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .scorecard-top {
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, var(--paper) 0%, var(--surface) 100%);
+    }
+    .scorecard-tag {
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: var(--ink-3);
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .scorecard-title {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        line-height: 1.3;
+    }
+    .scorecard-sub {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--ink-3);
+        font-family: var(--font-mono);
+    }
+    .scorecard-body {
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 28px;
+        align-items: start;
+    }
+    .scorecard-score { padding-top: 4px; }
+    .score-ring {
+        width: 116px; height: 116px;
+        border-radius: 50%;
+        background: conic-gradient(var(--accent) 0% 87%, var(--line-strong) 87% 100%);
+        display: grid; place-items: center;
+        position: relative;
+    }
+    .score-ring-inner {
+        width: 90px; height: 90px;
+        background: var(--surface);
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        text-align: center;
+    }
+    .score-num {
+        display: block;
+        font-size: 30px;
+        font-weight: 650;
+        letter-spacing: -0.03em;
+        line-height: 1;
+    }
+    .score-denom {
+        font-size: 11px;
+        color: var(--ink-3);
+        line-height: 1;
+        margin-top: 1px;
+    }
+    .score-verdict {
+        margin-top: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        text-align: center;
+    }
+    .scorecard-dims {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 9px;
+    }
+    .dim {
+        display: grid;
+        grid-template-columns: 140px 1fr 30px;
+        align-items: center;
+        gap: 14px;
+        font-size: 13px;
+        line-height: 1.2;
+        color: var(--ink-2);
+    }
+    .dim-bar {
+        height: 4px;
+        background: var(--line);
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+    }
+    .dim-bar span {
+        display: block;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 2px;
+    }
+    .dim-bar.dim-warn span { background: var(--warn); }
+    .dim-val {
+        text-align: right;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink);
+    }
+    .scorecard-foot {
+        padding: 14px 24px;
+        border-top: 1px solid var(--line);
+        background: var(--paper);
+        font-size: 12.5px;
+        color: var(--ink-2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .scorecard-chip {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        padding: 3px 8px;
+        border-radius: 999px;
+        color: var(--ink);
+        white-space: nowrap;
+    }
+
+    /* ---------- strip ---------- */
+    .strip {
+        padding: 32px 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+    }
+    .strip-inner {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+    .strip-label {
+        font-size: 12.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+        font-weight: 600;
+    }
+    .strip-list {
+        margin: 0; padding: 0; list-style: none;
+        display: flex; flex-wrap: wrap; gap: 8px 24px;
+    }
+    .strip-list li {
+        font-size: 14.5px;
+        font-weight: 500;
+        color: var(--ink);
+        font-feature-settings: 'tnum';
+    }
+
+    /* ---------- features ---------- */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+    .feature {
+        padding: 32px 28px;
+        border-radius: var(--radius-lg);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        position: relative;
+        transition: transform 200ms ease, box-shadow 200ms ease;
+    }
+    .feature:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card);
+    }
+    .feature-accent {
+        background: linear-gradient(180deg, var(--accent-tint) 0%, var(--surface) 60%);
+        border-color: var(--accent-soft);
+    }
+    .feature-num {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink-3);
+        margin-bottom: 14px;
+    }
+    .feature h3 {
+        font-size: 22px;
+        margin-bottom: 12px;
+    }
+    .feature p {
+        font-size: 15px;
+        line-height: 1.55;
+        color: var(--ink-2);
+        margin: 0 0 24px;
+    }
+    .feature-list {
+        list-style: none;
+        margin: 0; padding: 0;
+        font-size: 13.5px;
+        color: var(--ink-2);
+    }
+    .feature-list li {
+        padding: 6px 0;
+        border-top: 1px solid var(--line);
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+    .feature-list li::before {
+        content: "→";
+        color: var(--accent);
+        font-weight: 600;
+    }
+    .feature-list li:first-child { border-top: none; }
+
+    /* ---------- how ---------- */
+    .how-steps {
+        list-style: none;
+        margin: 0; padding: 0;
+        display: grid;
+        gap: 32px;
+        max-width: 880px;
+    }
+    .how-steps li {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        gap: 24px;
+        align-items: start;
+        padding-bottom: 32px;
+        border-bottom: 1px solid var(--line);
+    }
+    .how-steps li:last-child { border-bottom: none; }
+    .how-step-num {
+        display: grid;
+        place-items: center;
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--bg);
+        font-weight: 600;
+        font-family: var(--font-mono);
+        font-size: 14px;
+    }
+    .how-steps h3 {
+        font-size: 22px;
+        margin-bottom: 8px;
+    }
+    .how-steps p {
+        margin: 0;
+        font-size: 15.5px;
+        line-height: 1.6;
+        color: var(--ink-2);
+        max-width: 640px;
+    }
+
+    /* ---------- quote band ---------- */
+    .quote-band {
+        background: var(--ink);
+        color: var(--bg);
+        padding: 80px 0;
+        margin-top: 32px;
+    }
+    .quote-band-inner {
+        max-width: 880px;
+        text-align: center;
+    }
+    .quote-band .quote {
+        font-size: 26px;
+        line-height: 1.4;
+        letter-spacing: -0.015em;
+        font-weight: 450;
+        margin: 0 0 24px;
+        color: #FBFAF7;
+    }
+    .quote-meta {
+        font-size: 14px;
+        color: rgba(250, 250, 247, 0.82);
+        display: inline-flex;
+        gap: 12px;
+    }
+    .quote-name { color: var(--accent-soft); font-weight: 600; }
+
+    /* ---------- final cta ---------- */
+    .cta-final-inner {
+        text-align: center;
+        padding: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        background: var(--paper);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--line);
+    }
+    .cta-final-inner h2 {
+        font-size: 36px;
+        margin-bottom: 12px;
+    }
+    .cta-final-inner p {
+        font-size: 16px;
+        color: var(--ink-2);
+        margin: 0;
+        max-width: 520px;
+    }
+    .cta-final-buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    @@media (max-width: 960px) {
+        .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+        .hero-copy h1 { font-size: 48px; }
+        .features-grid { grid-template-columns: 1fr; }
+        .cta-final-inner { grid-template-columns: 1fr; padding: 40px; }
+        .cta-final-buttons { justify-content: flex-start; }
+        h2 { font-size: 34px; }
+    }
+    @@media (max-width: 560px) {
+        .hero-copy h1 { font-size: 38px; }
+        .scorecard-body { grid-template-columns: 1fr; }
+        .score-ring { margin: 0 auto; }
+        .dim { grid-template-columns: 110px 1fr 28px; font-size: 12px; }
+    }
+</style>

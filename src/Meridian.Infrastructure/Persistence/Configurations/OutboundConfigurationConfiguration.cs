@@ -18,6 +18,7 @@ public class OutboundConfigurationConfiguration : IEntityTypeConfiguration<Outbo
         builder.Property(c => c.FromAddress).HasColumnName("from_address").HasMaxLength(320).IsRequired();
         builder.Property(c => c.FromName).HasColumnName("from_name").HasMaxLength(200).IsRequired();
         builder.Property(c => c.ReplyToAddress).HasColumnName("reply_to_address").HasMaxLength(320);
+        builder.Property(c => c.InboundDomain).HasColumnName("inbound_domain").HasMaxLength(253);
         builder.Property(c => c.PhysicalAddress).HasColumnName("physical_address").HasMaxLength(500).IsRequired();
         builder.Property(c => c.UnsubscribeBaseUrl).HasColumnName("unsubscribe_base_url").HasMaxLength(1000).IsRequired();
         builder.Property(c => c.EncryptedWebhookSecret).HasColumnName("encrypted_webhook_secret").HasMaxLength(2000);

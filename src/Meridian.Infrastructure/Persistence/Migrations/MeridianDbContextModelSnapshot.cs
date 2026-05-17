@@ -520,6 +520,11 @@ namespace Meridian.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("subject");
 
+                    b.Property<string>("SuppressionReason")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("suppression_reason");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -571,6 +576,11 @@ namespace Meridian.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("from_name");
+
+                    b.Property<string>("InboundDomain")
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)")
+                        .HasColumnName("inbound_domain");
 
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean")

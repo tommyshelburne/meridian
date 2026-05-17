@@ -16,6 +16,7 @@ using Meridian.Infrastructure.Persistence.Repositories;
 using Meridian.Application.Opportunities;
 using Meridian.Application.Outreach;
 using Meridian.Application.Pipeline;
+using Meridian.Application.Pricing;
 using Meridian.Infrastructure.Crm;
 using Meridian.Infrastructure.Crm.HubSpot;
 using Meridian.Infrastructure.Crm.Pipedrive;
@@ -107,6 +108,9 @@ public static class DependencyInjection
         // Post-ingest pipeline: scoring → enrichment → CRM sync → auto-enrollment.
         // Runs as ProcessingJob in the worker between IngestionJob and SequenceJob.
         services.AddScoped<MeridianPipelineService>();
+
+        // Pricing audit — deterministic, stateless, pure in-memory computation.
+        services.AddSingleton<PricingAuditService>();
 
         // Secret protection — wraps ASP.NET Core Data Protection so outbound provider
         // API keys are never persisted in plaintext. The DI host (Worker / Portal)

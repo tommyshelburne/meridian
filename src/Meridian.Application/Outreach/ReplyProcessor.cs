@@ -57,6 +57,8 @@ public class ReplyProcessor
                     "Auto-reply from {From} suppressed; enrollment {EnrollmentId} not halted.",
                     reply.FromAddress, matched.Activity.EnrollmentId);
 
+                matched.Activity.RecordSuppressedReply(reply.ReceivedAt, reply.Body, "out_of_office");
+
                 await _auditLog.AppendAsync(AuditEvent.Record(
                     tenantId, "EmailActivity", matched.Activity.Id, "AutoReplyDetected", "system",
                     JsonSerializer.Serialize(new
