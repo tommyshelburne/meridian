@@ -45,6 +45,7 @@ public class MeridianDbContext : DbContext
     public DbSet<SourceDefinition> SourceDefinitions => Set<SourceDefinition>();
     public DbSet<OutboundConfiguration> OutboundConfigurations => Set<OutboundConfiguration>();
     public DbSet<CrmConnection> CrmConnections => Set<CrmConnection>();
+    public DbSet<WebhookPayloadRecord> WebhookPayloads => Set<WebhookPayloadRecord>();
 
     // Global market reference data — shared across all tenants, NOT tenant-owned.
     public DbSet<ProcurementMarketCell> ProcurementMarketCells => Set<ProcurementMarketCell>();

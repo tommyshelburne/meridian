@@ -29,7 +29,7 @@ public class InboundWebhookAdapterTests
     {
         var queue = new InMemoryWebhookIngestQueue();
         var source = CreateSource(DefaultParameters());
-        queue.Enqueue(new WebhookPayload(TenantId, source.Id,
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, source.Id,
             """{"id":"W-1","title":"Webhook RFP","naics":"561422"}""",
             DateTimeOffset.UtcNow));
 
@@ -49,7 +49,7 @@ public class InboundWebhookAdapterTests
     {
         var queue = new InMemoryWebhookIngestQueue();
         var source = CreateSource(DefaultParameters());
-        queue.Enqueue(new WebhookPayload(TenantId, source.Id,
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, source.Id,
             """[{"id":"W-1","title":"First"},{"id":"W-2","title":"Second"}]""",
             DateTimeOffset.UtcNow));
 
@@ -66,7 +66,7 @@ public class InboundWebhookAdapterTests
     {
         var queue = new InMemoryWebhookIngestQueue();
         var source = CreateSource(DefaultParameters());
-        queue.Enqueue(new WebhookPayload(TenantId, source.Id,
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, source.Id,
             """{"id":"W-1","title":"First"}""",
             DateTimeOffset.UtcNow));
 
@@ -84,8 +84,8 @@ public class InboundWebhookAdapterTests
     {
         var queue = new InMemoryWebhookIngestQueue();
         var source = CreateSource(DefaultParameters());
-        queue.Enqueue(new WebhookPayload(TenantId, source.Id, "not json at all", DateTimeOffset.UtcNow));
-        queue.Enqueue(new WebhookPayload(TenantId, source.Id,
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, source.Id, "not json at all", DateTimeOffset.UtcNow));
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, source.Id,
             """{"id":"W-Good","title":"OK"}""",
             DateTimeOffset.UtcNow));
 
@@ -113,17 +113,17 @@ public class InboundWebhookAdapterTests
     }
 
     [Fact]
-    public void Queue_isolates_payloads_by_source_id()
+    public async Task Queue_isolates_payloads_by_source_id()
     {
         var queue = new InMemoryWebhookIngestQueue();
         var sourceA = Guid.NewGuid();
         var sourceB = Guid.NewGuid();
 
-        queue.Enqueue(new WebhookPayload(TenantId, sourceA, """{"id":"A"}""", DateTimeOffset.UtcNow));
-        queue.Enqueue(new WebhookPayload(TenantId, sourceB, """{"id":"B"}""", DateTimeOffset.UtcNow));
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, sourceA, """{"id":"A"}""", DateTimeOffset.UtcNow));
+        await queue.EnqueueAsync(new WebhookPayload(TenantId, sourceB, """{"id":"B"}""", DateTimeOffset.UtcNow));
 
-        var drainedA = queue.DrainForSource(sourceA);
-        var drainedB = queue.DrainForSource(sourceB);
+        var drainedA = await queue.DrainForSourceAsync(sourceA);
+        var drainedB = await queue.DrainForSourceAsync(sourceB);
 
         drainedA.Should().HaveCount(1);
         drainedA[0].RawJson.Should().Contain("\"A\"");
