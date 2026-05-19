@@ -5,6 +5,7 @@ using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Auth;
 using Meridian.Infrastructure.Email;
 using Meridian.Application.Ingestion;
+using Meridian.Application.Markets;
 using Meridian.Application.Sources;
 using Meridian.Infrastructure.Ingestion;
 using Meridian.Infrastructure.Ingestion.Generic;
@@ -59,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<ISourceDefinitionRepository, SourceDefinitionRepository>();
         services.AddScoped<IOutboundConfigurationRepository, OutboundConfigurationRepository>();
         services.AddScoped<ICrmConnectionRepository, CrmConnectionRepository>();
+        services.AddScoped<IProcurementMarketRepository, ProcurementMarketRepository>();
 
         // Scoring — v2 rule-based engine
         var scoringConfig = new ScoringConfiguration();
@@ -103,6 +105,9 @@ public static class DependencyInjection
         // Ingestion orchestrator
         services.AddScoped<IngestionOrchestrator>();
         services.AddScoped<SourceManagementService>();
+
+        // TAM estimation — derives market-size figures for the pricing-audit feature.
+        services.AddScoped<TamEstimationService>();
 
         // Post-ingest pipeline: scoring → enrichment → CRM sync → auto-enrollment.
         // Runs as ProcessingJob in the worker between IngestionJob and SequenceJob.
