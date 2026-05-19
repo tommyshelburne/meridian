@@ -2,6 +2,7 @@ using Meridian.Domain.Audit;
 using Meridian.Domain.Auth;
 using Meridian.Domain.Contacts;
 using Meridian.Domain.Crm;
+using Meridian.Domain.Markets;
 using Meridian.Domain.Memory;
 using Meridian.Domain.Opportunities;
 using Meridian.Domain.Outreach;
@@ -45,6 +46,9 @@ public class MeridianDbContext : DbContext
     public DbSet<OutboundConfiguration> OutboundConfigurations => Set<OutboundConfiguration>();
     public DbSet<CrmConnection> CrmConnections => Set<CrmConnection>();
 
+    // Global market reference data — shared across all tenants, NOT tenant-owned.
+    public DbSet<ProcurementMarketCell> ProcurementMarketCells => Set<ProcurementMarketCell>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -68,5 +72,10 @@ public class MeridianDbContext : DbContext
         modelBuilder.Entity<SourceDefinition>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<OutboundConfiguration>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
         modelBuilder.Entity<CrmConnection>().HasQueryFilter(e => e.TenantId == _tenantContext.TenantId);
+
+        // ProcurementMarketCell is GLOBAL market reference data shared across all
+        // tenants. It deliberately receives NO HasQueryFilter — adding a tenant
+        // filter here would be a bug, since the entity has no TenantId and the
+        // data is not tenant-owned.
     }
 }
