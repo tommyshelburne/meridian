@@ -12,10 +12,6 @@
     or any OIDC-compliant IdP). Users who authenticate via a configured provider
     are auto-provisioned as Operators on first sign-in.
 </p>
-<p class="page-warn">
-    Changes take effect on the next portal restart — the auth pipeline caches OIDC
-    options per scheme name.
-</p>
 
 @if (!string.IsNullOrEmpty(Error))
 {
@@ -178,8 +174,6 @@
 
 <style>
     .page-lede { color: #4a4f63; max-width: 60ch; }
-    .page-warn { padding: 0.6rem 0.85rem; background: #fef6e0; border: 1px solid #f0d57a;
-                 color: #7a5a14; border-radius: 6px; max-width: 60ch; font-size: 0.9rem; }
     .settings-section { background: white; border: 1px solid #e3e6ef; border-radius: 10px;
                         padding: 1.5rem; margin-top: 1rem; }
     .settings-section h2 { margin: 0 0 1rem; font-size: 1rem; }

@@ -16,9 +16,9 @@ namespace Meridian.Portal.Auth.Oidc;
 // AddScheme. The matching IPostConfigureOptions<OpenIdConnectOptions> populates the
 // per-scheme OpenIdConnectOptions when the handler initializes.
 //
-// One known MVP limitation: cached schemes don't refresh when an admin updates a
-// config — a portal restart is required for changes to take effect. That's acceptable
-// for v3.0; cache invalidation lands with the admin CRUD page.
+// Cache invalidation: SsoSettingsEndpoints calls RemoveScheme after every admin CRUD
+// operation so that the next request re-evaluates the DB state instead of serving a
+// stale AuthenticationScheme.
 public class DynamicOidcSchemeProvider : AuthenticationSchemeProvider
 {
     private readonly IServiceScopeFactory _scopes;
