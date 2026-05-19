@@ -116,17 +116,36 @@ boot will run all migrations.
 
 ## Artifacts
 
-From a workstation:
+For a provisioned host, `scripts/deploy.sh` does publish + stage + swap
+in one step — see **Routine deploy** above. The manual equivalent below
+is the reference for a fresh host or a deploy without the script.
+
+Publish from a workstation:
 
 ```bash
 dotnet publish src/Meridian.Portal -c Release -r linux-x64 \
     --no-self-contained -o ./publish/portal
 dotnet publish src/Meridian.Worker -c Release -r linux-x64 \
     --no-self-contained -o ./publish/worker
-
-rsync -av ./publish/portal/  burrow:/opt/meridian/portal/
-rsync -av ./publish/worker/  burrow:/opt/meridian/worker/
 ```
+
+`rsync` straight into `/opt/meridian/...` does NOT work — that tree is
+owned `meridian:meridian`, the SSH user `claw` can't write it, and
+`sudo` needs a password (so `--rsync-path="sudo rsync"` can't run
+non-interactively either). Stage into `claw`'s home, then let the
+root-owned host-side `meridian-deploy.sh` do the privileged swap:
+
+```bash
+# stage to the host (workstation) — no privileges needed
+rsync -a --delete ./publish/portal/ burrow:meridian-portal-stage/
+rsync -a --delete ./publish/worker/ burrow:meridian-worker-stage/
+
+# privileged swap (host) — backup → stop → swap → chown → start
+ssh burrow 'sudo /home/claw/meridian-deploy.sh portal'
+ssh burrow 'sudo /home/claw/meridian-deploy.sh worker'
+```
+
+Portal first — it applies the migrations the Worker depends on.
 
 ## Environment / appsettings overrides
 
@@ -244,11 +263,19 @@ host as the target.
 
 ## Rollback
 
+Every `meridian-deploy.sh` run first backs the live artifact up to
+`/opt/meridian/<svc>.bak`. To roll back the last deploy, SSH in and run
+as root (substitute `worker` for `portal` as needed):
+
 ```bash
-sudo systemctl stop meridian-portal meridian-worker
-# Restore previous publish/ artifacts via rsync
-sudo systemctl start meridian-portal meridian-worker
+ssh burrow                 # then, on the host:
+sudo systemctl stop meridian-portal
+sudo rsync -a --delete /opt/meridian/portal.bak/ /opt/meridian/portal/
+sudo systemctl start meridian-portal
 ```
+
+`.bak` holds only the *previous* deploy — it is overwritten on every
+run, so this rolls back exactly one step.
 
 DB migrations are NOT auto-rolled-back. If a migration was the cause,
 revert manually with `dotnet ef database update <previous-migration>`
