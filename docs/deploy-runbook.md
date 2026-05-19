@@ -14,6 +14,48 @@ script (acknowledged SUPREME-0 violation; deferred to v3.1). Rollback is
 Companion to `docs/soft-launch-runbook.md`. Run the deploy steps first,
 then the soft-launch checklist with the deployed host as the target.
 
+## Routine deploy: `scripts/deploy.sh`
+
+For an already-provisioned host, a deploy is one command from a
+workstation:
+
+```bash
+scripts/deploy.sh        # publishes, stages, swaps, restarts, verifies
+```
+
+It publishes Portal + Worker, rsyncs them to the burrow staging dirs
+`/home/claw/meridian-{portal,worker}-stage/`, runs the host-side
+`meridian-deploy.sh` for each service (Portal first — it applies
+migrations on startup), and polls `https://meridianbd.dev/` until it
+serves 200. Deploys whatever commit is checked out; warns if not `main`.
+
+The host-side `/home/claw/meridian-deploy.sh <portal|worker>` does the
+privileged part: backup `→` stop `→` rsync swap `→` chown `→` start.
+
+### One-time host setup: scoped passwordless sudo
+
+`scripts/deploy.sh` needs to invoke the host-side script under `sudo`
+without an interactive password. Grant that **once**, scoped to only
+that script:
+
+```bash
+# on burrow
+sudo chown root:root /home/claw/meridian-deploy.sh   # claw can no longer edit it
+sudo chmod 755 /home/claw/meridian-deploy.sh
+echo "claw ALL=(root) NOPASSWD: /home/claw/meridian-deploy.sh" \
+  | sudo tee /etc/sudoers.d/meridian-deploy
+sudo chmod 440 /etc/sudoers.d/meridian-deploy
+sudo visudo -cf /etc/sudoers.d/meridian-deploy        # validate syntax
+```
+
+The `chown root:root` is the security crux: passwordless sudo on a
+script the calling user can rewrite is a trivial root escalation. Root
+ownership makes the script read-only to `claw`, so the NOPASSWD grant
+only ever runs the reviewed deploy logic.
+
+The sections below are the **first-time / from-scratch** provisioning
+reference for a new host.
+
 ## Target host
 
 Hetzner CPX31 (4 vCPU / 8 GB RAM / 160 GB), Ubuntu 24.04 LTS, on the
