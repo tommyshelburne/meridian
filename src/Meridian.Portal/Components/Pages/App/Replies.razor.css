@@ -22,3 +22,11 @@
 .reply-opportunity a:hover { text-decoration: underline; }
 
 .reply-body { margin: 0.5rem 0 0; padding: 0.7rem 0.9rem; background: #f7f8fc; border: 1px solid #e3e6ef; border-radius: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 0.88rem; color: #1a1c2d; line-height: 1.45; white-space: pre-wrap; word-break: break-word; max-height: 18rem; overflow: auto; }
+
+.replies-toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.toolbar-toggle { display: inline-block; padding: 0.4rem 0.8rem; background: white; border: 1px solid #cfd3e0; border-radius: 6px; color: #2a3552; text-decoration: none; font-size: 0.85rem; font-weight: 600; }
+.toolbar-toggle:hover { background: #f5f7fb; }
+.toolbar-meta { font-size: 0.78rem; color: #6a6e82; }
+
+.reply-item.is-suppressed { border-left-color: #b07f1c; background: #fdfaf2; }
+.suppressed-badge { display: inline-block; padding: 0.1rem 0.5rem; background: #fbecc8; color: #5c4108; border-radius: 999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em; margin-left: 0.4rem; }

@@ -93,7 +93,10 @@ public class ReplyProcessorTests
         result.Value!.AutoReplies.Should().Be(1);
         result.Value.MatchedByMessageId.Should().Be(0);
         activity.Status.Should().NotBe(EmailStatus.Replied);
-        activity.RepliedAt.Should().BeNull();
+        activity.RepliedAt.Should().NotBeNull("Slice 4: suppressed replies persist RepliedAt so /replies can show them under the 'Show suppressed' toggle");
+        activity.SuppressionReason.Should().Be("out_of_office");
+        activity.IsSuppressed.Should().BeTrue();
+        activity.ReplyBody.Should().Be("I am out of office until next Monday.");
         enrollment.Status.Should().NotBe(EnrollmentStatus.Replied);
     }
 
@@ -274,7 +277,7 @@ public class ReplyProcessorTests
             => Task.FromResult(_activities.FirstOrDefault(a => a.MessageId == messageId));
 
         public Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(
-            Guid tenantId, int take, CancellationToken ct)
+            Guid tenantId, int take, CancellationToken ct, bool includeSuppressed = false)
             => Task.FromResult<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>>(Array.Empty<Meridian.Application.Outreach.ReplyListItem>());
 
         public Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid tenantId, string normalizedSubject, Guid contactId, CancellationToken ct)

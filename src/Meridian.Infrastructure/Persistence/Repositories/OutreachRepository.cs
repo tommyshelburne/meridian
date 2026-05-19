@@ -67,11 +67,12 @@ public class OutreachRepository : IOutreachRepository
         => await _db.EmailActivities.AddAsync(activity, ct);
 
     public async Task<IReadOnlyList<ReplyListItem>> GetRecentRepliesAsync(
-        Guid tenantId, int take, CancellationToken ct)
+        Guid tenantId, int take, CancellationToken ct, bool includeSuppressed = false)
     {
         var rows = await (
             from activity in _db.EmailActivities.IgnoreQueryFilters()
             where activity.RepliedAt != null && activity.TenantId == tenantId
+                  && (includeSuppressed || activity.SuppressionReason == null)
             join contact in _db.Contacts.IgnoreQueryFilters() on activity.ContactId equals contact.Id
             join opportunity in _db.Opportunities.IgnoreQueryFilters() on activity.OpportunityId equals opportunity.Id
             where contact.TenantId == tenantId && opportunity.TenantId == tenantId
@@ -86,7 +87,8 @@ public class OutreachRepository : IOutreachRepository
                 activity.Subject,
                 activity.StepNumber,
                 activity.RepliedAt!.Value,
-                activity.ReplyBody)
+                activity.ReplyBody,
+                activity.SuppressionReason)
         ).Take(take).ToListAsync(ct);
 
         return rows;

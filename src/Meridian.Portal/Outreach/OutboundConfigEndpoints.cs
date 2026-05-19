@@ -36,6 +36,7 @@ public static class OutboundConfigEndpoints
                 form.FromAddress ?? string.Empty,
                 form.FromName ?? string.Empty,
                 Blank(form.ReplyToAddress),
+                Blank(form.InboundDomain),
                 form.PhysicalAddress ?? string.Empty,
                 form.UnsubscribeBaseUrl ?? string.Empty,
                 Blank(form.WebhookSecret),
@@ -61,6 +62,7 @@ public class OutboundConfigForm
     public string? FromAddress { get; set; }
     public string? FromName { get; set; }
     public string? ReplyToAddress { get; set; }
+    public string? InboundDomain { get; set; }
     public string? PhysicalAddress { get; set; }
     public string? UnsubscribeBaseUrl { get; set; }
     public string? WebhookSecret { get; set; }

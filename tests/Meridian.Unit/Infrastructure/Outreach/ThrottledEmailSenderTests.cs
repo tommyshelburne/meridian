@@ -150,7 +150,7 @@ public class ThrottledEmailSenderTests
     private class FakeOutboundContext : TenantOutboundContext
     {
         private readonly int? _capOverride;
-        public FakeOutboundContext(int? capOverride) : base(null!, null!, null!) =>
+        public FakeOutboundContext(int? capOverride) : base(null!, null!, null!, null!) =>
             _capOverride = capOverride;
 
         public override Task<TenantOutboundSettings?> GetAsync(CancellationToken ct) =>

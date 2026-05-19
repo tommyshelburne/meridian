@@ -27,7 +27,10 @@ builder.Services.AddMeridianInfrastructure(connectionString, builder.Configurati
 // hosts can read the same shared keyring (PersistKeysToFileSystem against
 // a shared volume). Without matching names the Worker can't decrypt
 // secrets the Portal wrote.
-builder.Services.AddDataProtection().SetApplicationName("Meridian");
+var dpBuilder = builder.Services.AddDataProtection().SetApplicationName("Meridian");
+var dpKeyDir = builder.Configuration["DataProtection:KeyDirectory"];
+if (!string.IsNullOrWhiteSpace(dpKeyDir))
+    dpBuilder.PersistKeysToFileSystem(new DirectoryInfo(dpKeyDir));
 
 // Register the OIDC PostConfigureOptions BEFORE AddOpenIdConnect so it runs before
 // the framework's validating PostConfigureOptions (which throws if Authority/ClientId

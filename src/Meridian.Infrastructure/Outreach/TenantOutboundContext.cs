@@ -17,6 +17,7 @@ public record TenantOutboundSettings(
 public class TenantOutboundContext
 {
     private readonly IOutboundConfigurationRepository _repo;
+    private readonly ITenantRepository _tenantRepo;
     private readonly ITenantContext _tenantContext;
     private readonly ISecretProtector _protector;
     private TenantOutboundSettings? _cached;
@@ -24,10 +25,12 @@ public class TenantOutboundContext
 
     public TenantOutboundContext(
         IOutboundConfigurationRepository repo,
+        ITenantRepository tenantRepo,
         ITenantContext tenantContext,
         ISecretProtector protector)
     {
         _repo = repo;
+        _tenantRepo = tenantRepo;
         _tenantContext = tenantContext;
         _protector = protector;
     }
@@ -49,12 +52,18 @@ public class TenantOutboundContext
             ? string.Empty
             : _protector.Unprotect(config.EncryptedApiKey);
 
+        var tenant = await _tenantRepo.GetByIdAsync(_tenantContext.TenantId, ct);
+        var effectiveReplyTo = OutboundReplyAddress.Compose(
+            config.InboundDomain,
+            tenant?.Slug ?? string.Empty,
+            config.ReplyToAddress);
+
         _cached = new TenantOutboundSettings(
             config.ProviderType,
             apiKey,
             config.FromAddress,
             config.FromName,
-            config.ReplyToAddress,
+            effectiveReplyTo,
             config.PhysicalAddress,
             config.UnsubscribeBaseUrl,
             config.DailyCap);

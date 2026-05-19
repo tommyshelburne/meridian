@@ -14,9 +14,10 @@ public class ComplianceFooterEmailSenderTests
     private ComplianceFooterEmailSender Build(TenantOutboundSettings? settings)
     {
         var fakeRepo = new StubRepo(settings);
+        var tenantRepo = new StubTenantRepository();
         var tenantContext = new StubTenantContext(TenantId);
         var protector = new PassThroughProtector();
-        var context = new TenantOutboundContext(fakeRepo, tenantContext, protector);
+        var context = new TenantOutboundContext(fakeRepo, tenantRepo, tenantContext, protector);
         return new ComplianceFooterEmailSender(_inner, context);
     }
 
@@ -114,6 +115,19 @@ public class ComplianceFooterEmailSenderTests
         public Guid TenantId { get; private set; }
         public StubTenantContext(Guid id) => TenantId = id;
         public void SetTenant(Guid tenantId) => TenantId = tenantId;
+    }
+
+    private class StubTenantRepository : ITenantRepository
+    {
+        public Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct) => Task.FromResult<Tenant?>(null);
+        public Task<Tenant?> GetBySlugAsync(string slug, CancellationToken ct) => Task.FromResult<Tenant?>(null);
+        public Task<bool> SlugExistsAsync(string slug, CancellationToken ct) => Task.FromResult(false);
+        public Task<IReadOnlyList<Tenant>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Tenant>>(Array.Empty<Tenant>());
+        public Task<IReadOnlyList<Tenant>> GetActiveTenantsAsync(CancellationToken ct)
+            => Task.FromResult<IReadOnlyList<Tenant>>(Array.Empty<Tenant>());
+        public Task AddAsync(Tenant tenant, CancellationToken ct) => Task.CompletedTask;
+        public Task SaveChangesAsync(CancellationToken ct) => Task.CompletedTask;
     }
 
     private class PassThroughProtector : ISecretProtector

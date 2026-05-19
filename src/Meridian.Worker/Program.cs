@@ -3,6 +3,7 @@ using Meridian.Application.Ports;
 using Microsoft.AspNetCore.DataProtection;
 using Meridian.Domain.Tenants;
 using Meridian.Infrastructure;
+using Meridian.Infrastructure.Health;
 using Meridian.Infrastructure.Ingestion;
 using Meridian.Infrastructure.Persistence;
 using Meridian.Worker;
@@ -10,7 +11,17 @@ using Meridian.Worker.Jobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
+
+// /health is the only HTTP surface the Worker exposes. Background jobs do
+// the real work. Default to a non-conflict port so this co-locates cleanly
+// with the Portal in dev/prod. Operator overrides via ASPNETCORE_URLS or
+// the Urls config key as usual.
+if (string.IsNullOrEmpty(builder.Configuration["Urls"])
+    && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls("http://localhost:9090");
+}
 
 // Infrastructure: DB, repositories, scoring
 var connectionString = builder.Configuration.GetConnectionString("Meridian")
@@ -23,7 +34,10 @@ builder.Services.AddMeridianInfrastructure(connectionString, builder.Configurati
 // pointed at a shared volume); otherwise the Portal-encrypted secrets are
 // unreadable here. Local dev uses default ephemeral storage which is fine
 // because secrets aren't persisted across restarts in dev anyway.
-builder.Services.AddDataProtection().SetApplicationName("Meridian");
+var dpBuilder = builder.Services.AddDataProtection().SetApplicationName("Meridian");
+var dpKeyDir = builder.Configuration["DataProtection:KeyDirectory"];
+if (!string.IsNullOrWhiteSpace(dpKeyDir))
+    dpBuilder.PersistKeysToFileSystem(new DirectoryInfo(dpKeyDir));
 
 // Dev-only enricher swap so the soft-launch dry-run produces a contact
 // without needing real SAM.gov / USASpending API keys. The real enrichers
@@ -34,6 +48,10 @@ if (builder.Environment.IsDevelopment())
     builder.Services.RemoveAll<IPocEnricher>();
     builder.Services.AddTransient<IPocEnricher, DevSyntheticPocEnricher>();
 }
+
+// Health endpoint provider — captures version + build date at startup,
+// returns current timestamp on each request.
+builder.Services.AddSingleton<HealthInfo>();
 
 // Worker jobs
 builder.Services.AddSingleton<IMeridianJob, IngestionJob>();
@@ -68,8 +86,11 @@ if (args.Length >= 2 && args[0] == "--hash-password")
 // Hosted service
 builder.Services.AddHostedService<MeridianWorker>();
 
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+
+app.MapGet("/health", (HealthInfo info) => Results.Json(info.Build()));
+
+app.Run();
 return;
 
 static async Task RunSmokeAsync(IServiceProvider services, string tenantSlug)

@@ -99,6 +99,51 @@ public class OutboundConfigurationTests
     }
 
     [Fact]
+    public void Inbound_domain_persisted_on_create()
+    {
+        var config = OutboundConfiguration.Create(TenantId, OutboundProviderType.Resend,
+            "encrypted-key", "outreach@vendor.com", "Vendor",
+            "1 Main St, City, ST 00000", "https://example.com/unsubscribe",
+            replyToAddress: null, inboundDomain: "reply.meridian.app");
+
+        config.InboundDomain.Should().Be("reply.meridian.app");
+    }
+
+    [Fact]
+    public void Inbound_domain_round_trips_via_update_sender()
+    {
+        var config = Valid();
+        config.UpdateSender("outreach@vendor.com", "Vendor", replyToAddress: null,
+            inboundDomain: "reply.meridian.app");
+
+        config.InboundDomain.Should().Be("reply.meridian.app");
+    }
+
+    [Theory]
+    [InlineData("not-a-domain")]
+    [InlineData("has@symbol.com")]
+    [InlineData("has space.com")]
+    public void Invalid_inbound_domain_is_rejected_on_create(string domain)
+    {
+        var act = () => OutboundConfiguration.Create(TenantId, OutboundProviderType.Resend,
+            "encrypted-key", "outreach@vendor.com", "Vendor",
+            "1 Main St, City, ST 00000", "https://example.com/unsubscribe",
+            replyToAddress: null, inboundDomain: domain);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*inbound domain*");
+    }
+
+    [Fact]
+    public void Invalid_inbound_domain_is_rejected_on_update()
+    {
+        var config = Valid();
+        var act = () => config.UpdateSender("outreach@vendor.com", "Vendor",
+            replyToAddress: null, inboundDomain: "not-a-domain");
+
+        act.Should().Throw<ArgumentException>().WithMessage("*inbound domain*");
+    }
+
+    [Fact]
     public void Webhook_secret_is_optional_and_clears_on_blank_value()
     {
         var config = Valid();

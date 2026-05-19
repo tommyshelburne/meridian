@@ -10,4 +10,5 @@ public record ReplyListItem(
     string Subject,
     int StepNumber,
     DateTimeOffset RepliedAt,
-    string? ReplyBody);
+    string? ReplyBody,
+    string? SuppressionReason);

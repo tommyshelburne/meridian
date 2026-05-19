@@ -26,7 +26,7 @@ public interface IOutreachRepository
     Task<EmailActivity?> GetEmailBySubjectAndContactAsync(Guid tenantId, string normalizedSubject, Guid contactId, CancellationToken ct);
     Task AddEmailActivityAsync(EmailActivity activity, CancellationToken ct);
     Task<IReadOnlyList<Meridian.Application.Outreach.ReplyListItem>> GetRecentRepliesAsync(
-        Guid tenantId, int take, CancellationToken ct);
+        Guid tenantId, int take, CancellationToken ct, bool includeSuppressed = false);
 
     Task<bool> IsSuppressedAsync(Guid tenantId, string email, CancellationToken ct);
     Task AddSuppressionAsync(SuppressionEntry entry, CancellationToken ct);
