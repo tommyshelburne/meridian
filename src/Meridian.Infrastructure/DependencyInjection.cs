@@ -100,7 +100,9 @@ public static class DependencyInjection
         services.AddTransient<IOpportunitySourceAdapter, GenericRestAdapter>();
         services.AddHttpClient<GenericHtmlAdapter>();
         services.AddTransient<IOpportunitySourceAdapter, GenericHtmlAdapter>();
-        services.AddSingleton<IWebhookIngestQueue, InMemoryWebhookIngestQueue>();
+        // Durable webhook queue — the POST endpoint (Portal process) and the
+        // ingestion run that drains it (Worker process) need shared state.
+        services.AddScoped<IWebhookIngestQueue, DbWebhookIngestQueue>();
         services.AddTransient<IOpportunitySourceAdapter, InboundWebhookAdapter>();
 
         // Ingestion orchestrator

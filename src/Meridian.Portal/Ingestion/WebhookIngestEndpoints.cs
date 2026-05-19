@@ -35,7 +35,8 @@ public static class WebhookIngestEndpoints
             if (string.IsNullOrWhiteSpace(json))
                 return Results.BadRequest(new { error = "Empty payload." });
 
-            queue.Enqueue(new WebhookPayload(source.TenantId, source.Id, json, DateTimeOffset.UtcNow));
+            await queue.EnqueueAsync(
+                new WebhookPayload(source.TenantId, source.Id, json, DateTimeOffset.UtcNow), ct);
             return Results.Accepted();
         }).DisableAntiforgery();
 

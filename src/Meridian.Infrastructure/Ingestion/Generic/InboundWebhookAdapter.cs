@@ -21,15 +21,15 @@ public class InboundWebhookAdapter : IOpportunitySourceAdapter
         _logger = logger;
     }
 
-    public Task<ServiceResult<IReadOnlyList<IngestedOpportunity>>> FetchAsync(
+    public async Task<ServiceResult<IReadOnlyList<IngestedOpportunity>>> FetchAsync(
         SourceDefinition source, CancellationToken ct)
     {
         var parameters = InboundWebhookParameters.Parse(source.ParametersJson);
         if (parameters is null)
-            return Task.FromResult(ServiceResult<IReadOnlyList<IngestedOpportunity>>.Fail(
-                "InboundWebhook parameters require 'secret', 'agencyName', and 'fieldMap' with 'externalId' and 'title'."));
+            return ServiceResult<IReadOnlyList<IngestedOpportunity>>.Fail(
+                "InboundWebhook parameters require 'secret', 'agencyName', and 'fieldMap' with 'externalId' and 'title'.");
 
-        var payloads = _queue.DrainForSource(source.Id);
+        var payloads = await _queue.DrainForSourceAsync(source.Id, ct);
         var results = new List<IngestedOpportunity>();
 
         foreach (var payload in payloads)
@@ -62,8 +62,8 @@ public class InboundWebhookAdapter : IOpportunitySourceAdapter
         _logger.LogInformation("InboundWebhook drained {PayloadCount} payloads producing {Count} opportunities for source {SourceId}",
             payloads.Count, results.Count, source.Id);
 
-        return Task.FromResult(ServiceResult<IReadOnlyList<IngestedOpportunity>>.Ok(
-            (IReadOnlyList<IngestedOpportunity>)results));
+        return ServiceResult<IReadOnlyList<IngestedOpportunity>>.Ok(
+            (IReadOnlyList<IngestedOpportunity>)results);
     }
 
     private static IngestedOpportunity? Map(JsonElement item, InboundWebhookParameters parameters)

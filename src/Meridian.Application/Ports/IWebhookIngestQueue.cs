@@ -8,6 +8,7 @@ public record WebhookPayload(
 
 public interface IWebhookIngestQueue
 {
-    void Enqueue(WebhookPayload payload);
-    IReadOnlyList<WebhookPayload> DrainForSource(Guid sourceDefinitionId);
+    Task EnqueueAsync(WebhookPayload payload, CancellationToken ct = default);
+    Task<IReadOnlyList<WebhookPayload>> DrainForSourceAsync(
+        Guid sourceDefinitionId, CancellationToken ct = default);
 }
