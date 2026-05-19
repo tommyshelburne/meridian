@@ -16,6 +16,10 @@
 {
     <div class="auth-error" role="alert">@Error</div>
 }
+@if (!string.IsNullOrEmpty(CrmError))
+{
+    <div class="auth-error" role="alert">@CrmError</div>
+}
 @if (Saved == "1")
 {
     <div class="auth-ok" role="status">Saved.</div>
@@ -125,6 +129,7 @@
 @code {
     [Parameter] public string Slug { get; set; } = "";
     [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "crm_error")] public string? CrmError { get; set; }
     [SupplyParameterFromQuery] public string? Saved { get; set; }
     [SupplyParameterFromQuery(Name = "crm_connected")] public string? CrmConnected { get; set; }
 
