@@ -22,7 +22,7 @@ public static class SourceEndpoints
             if (!Enum.TryParse<SourceAdapterType>(form.AdapterType, out var type))
                 return Redirect(slug, error: "Invalid adapter type.");
 
-            var result = await svc.CreateAsync(tenantId, type, form.Name,
+            var result = await svc.CreateAsync(tenantId, type, form.Name ?? "",
                 form.ParametersJson ?? "{}", form.Schedule, ct);
             return result.IsSuccess
                 ? Results.Redirect($"/app/{slug}/sources?created={result.Value!.Id}")
@@ -48,7 +48,7 @@ public static class SourceEndpoints
             };
             var json = JsonSerializer.Serialize(parameters);
             var result = await svc.CreateAsync(tenantId, SourceAdapterType.GenericRss,
-                form.Name, json, form.Schedule, ct);
+                form.Name ?? "", json, form.Schedule, ct);
             return result.IsSuccess
                 ? Results.Redirect($"/app/{slug}/sources?created={result.Value!.Id}")
                 : Results.Redirect($"/app/{slug}/sources/new/rss?error={Uri.EscapeDataString(result.Error!)}");
@@ -85,7 +85,7 @@ public static class SourceEndpoints
             };
             var json = JsonSerializer.Serialize(parameters);
             var result = await svc.CreateAsync(tenantId, SourceAdapterType.GenericRest,
-                form.Name, json, form.Schedule, ct);
+                form.Name ?? "", json, form.Schedule, ct);
             return result.IsSuccess
                 ? Results.Redirect($"/app/{slug}/sources?created={result.Value!.Id}")
                 : Results.Redirect($"/app/{slug}/sources/new/rest?error={Uri.EscapeDataString(result.Error!)}");
@@ -122,7 +122,7 @@ public static class SourceEndpoints
             };
             var json = JsonSerializer.Serialize(parameters);
             var result = await svc.CreateAsync(tenantId, SourceAdapterType.InboundWebhook,
-                form.Name, json, form.Schedule, ct);
+                form.Name ?? "", json, form.Schedule, ct);
             return result.IsSuccess
                 ? Results.Redirect($"/app/{slug}/sources?created={result.Value!.Id}&webhookSecret={Uri.EscapeDataString(secret)}&webhookSourceId={result.Value.Id}")
                 : Results.Redirect($"/app/{slug}/sources/new/webhook?error={Uri.EscapeDataString(result.Error!)}");
@@ -201,30 +201,71 @@ public static class SourceEndpoints
     }
 }
 
-public record CreateSourceForm(string AdapterType, string Name, string? ParametersJson, string? Schedule);
-public record UpdateSourceForm(string? ParametersJson, string? Schedule);
+// Form-bound types must be classes with a public parameterless constructor and
+// settable properties. Minimal-API [FromForm] complex-type binding does not use
+// constructor parameters (unlike [FromBody] JSON), so positional records bind to
+// nothing and the request fails with an empty-body HTTP 400 before the handler runs.
 
-public record RssWizardForm(
-    string Name, string FeedUrl, string AgencyName,
-    string? AgencyState, string? IsDefense,
-    string? IncludeKeywords, string? ExcludeKeywords,
-    string? Schedule);
+public class CreateSourceForm
+{
+    public string? AdapterType { get; set; }
+    public string? Name { get; set; }
+    public string? ParametersJson { get; set; }
+    public string? Schedule { get; set; }
+}
 
-public record RestWizardForm(
-    string Name, string Url, string AgencyName,
-    string? AgencyState, string? IsDefense,
-    string? Method, string? HeadersText, string? RequestBody,
-    string? ResultsJsonPath,
-    string MapExternalId, string MapTitle,
-    string? MapDescription, string? MapPostedDate, string? MapResponseDeadline,
-    string? MapNaicsCode, string? MapEstimatedValue,
-    string? Schedule);
+public class UpdateSourceForm
+{
+    public string? ParametersJson { get; set; }
+    public string? Schedule { get; set; }
+}
 
-public record WebhookWizardForm(
-    string Name, string AgencyName,
-    string? AgencyState, string? IsDefense,
-    string? Secret,
-    string MapExternalId, string MapTitle,
-    string? MapDescription, string? MapPostedDate, string? MapResponseDeadline,
-    string? MapNaicsCode, string? MapEstimatedValue,
-    string? Schedule);
+public class RssWizardForm
+{
+    public string? Name { get; set; }
+    public string? FeedUrl { get; set; }
+    public string? AgencyName { get; set; }
+    public string? AgencyState { get; set; }
+    public string? IsDefense { get; set; }
+    public string? IncludeKeywords { get; set; }
+    public string? ExcludeKeywords { get; set; }
+    public string? Schedule { get; set; }
+}
+
+public class RestWizardForm
+{
+    public string? Name { get; set; }
+    public string? Url { get; set; }
+    public string? AgencyName { get; set; }
+    public string? AgencyState { get; set; }
+    public string? IsDefense { get; set; }
+    public string? Method { get; set; }
+    public string? HeadersText { get; set; }
+    public string? RequestBody { get; set; }
+    public string? ResultsJsonPath { get; set; }
+    public string? MapExternalId { get; set; }
+    public string? MapTitle { get; set; }
+    public string? MapDescription { get; set; }
+    public string? MapPostedDate { get; set; }
+    public string? MapResponseDeadline { get; set; }
+    public string? MapNaicsCode { get; set; }
+    public string? MapEstimatedValue { get; set; }
+    public string? Schedule { get; set; }
+}
+
+public class WebhookWizardForm
+{
+    public string? Name { get; set; }
+    public string? AgencyName { get; set; }
+    public string? AgencyState { get; set; }
+    public string? IsDefense { get; set; }
+    public string? Secret { get; set; }
+    public string? MapExternalId { get; set; }
+    public string? MapTitle { get; set; }
+    public string? MapDescription { get; set; }
+    public string? MapPostedDate { get; set; }
+    public string? MapResponseDeadline { get; set; }
+    public string? MapNaicsCode { get; set; }
+    public string? MapEstimatedValue { get; set; }
+    public string? Schedule { get; set; }
+}
