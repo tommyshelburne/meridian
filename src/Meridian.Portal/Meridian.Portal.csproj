@@ -17,6 +17,14 @@
     <Content Include="Help\Articles\*.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The Web SDK's default **/*.json Content glob captures build-generated
+         .json files under bin/ and obj/: the SDK builds DefaultItemExcludes
+         from $(BaseOutputPath)='bin\', which on macOS yields backslash glob
+         patterns (bin\/**) that never match the real bin/ directory. Left
+         unchecked, every build republishes those .json files into the output,
+         nesting bin/ one level deeper each time (MSB3021 once paths exceed the
+         1024-char limit). Remove them with forward-slash globs that match. -->
+    <Content Remove="bin/**;obj/**" />
   </ItemGroup>
 
   <PropertyGroup>
