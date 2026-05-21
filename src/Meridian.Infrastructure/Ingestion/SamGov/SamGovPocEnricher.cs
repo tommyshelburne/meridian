@@ -28,6 +28,17 @@ public class SamGovPocEnricher : IPocEnricher
     public async Task<ServiceResult<IReadOnlyList<Contact>>> EnrichAsync(
         Opportunity opportunity, Guid tenantId, CancellationToken ct)
     {
+        // Fast-fail when no API key is configured. SAM.gov stalls/rejects
+        // keyless requests, so without a key every call simply burns the
+        // HttpClient timeout and ProcessingJob hangs for minutes per
+        // opportunity. Skip entirely rather than issue doomed requests.
+        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+        {
+            _logger.LogInformation(
+                "SAM.gov POC enricher skipped — no API key configured (SamGov:ApiKey).");
+            return ServiceResult<IReadOnlyList<Contact>>.Ok(Array.Empty<Contact>());
+        }
+
         var contacts = new List<Contact>();
 
         // Strategy 1: Check POC data embedded in the opportunity's own listing
