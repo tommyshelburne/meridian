@@ -1,4 +1,5 @@
 using Meridian.Application.Common;
+using Meridian.Application.Outreach;
 using Meridian.Application.Ports;
 using Meridian.Domain.Common;
 using Meridian.Domain.Contacts;
@@ -10,11 +11,19 @@ public class ManualEnrichmentService
 {
     private readonly IOpportunityRepository _opportunities;
     private readonly IContactRepository _contacts;
+    private readonly IOutreachRepository _outreach;
+    private readonly OutreachEnrollmentService _enrollment;
 
-    public ManualEnrichmentService(IOpportunityRepository opportunities, IContactRepository contacts)
+    public ManualEnrichmentService(
+        IOpportunityRepository opportunities,
+        IContactRepository contacts,
+        IOutreachRepository outreach,
+        OutreachEnrollmentService enrollment)
     {
         _opportunities = opportunities;
         _contacts = contacts;
+        _outreach = outreach;
+        _enrollment = enrollment;
     }
 
     public Task<IReadOnlyList<Opportunity>> GetUnenrichedAsync(Guid tenantId, CancellationToken ct)
@@ -63,6 +72,13 @@ public class ManualEnrichmentService
 
         await _contacts.SaveChangesAsync(ct);
         await _opportunities.SaveChangesAsync(ct);
+
+        // Enroll the freshly attached contact so the next SequenceJob run sends
+        // to them — the whole purpose of the manual enrichment queue. Routes
+        // through the same OutreachEnrollmentService as the automated pipeline.
+        await _enrollment.EnrollOpportunityAsync(opp, tenantId, ct);
+        await _outreach.SaveChangesAsync(ct);
+
         return ServiceResult.Ok();
     }
 }

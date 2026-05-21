@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Meridian.Application.Common;
+using Meridian.Application.Outreach;
 using Meridian.Application.Pipeline;
 using Meridian.Application.Ports;
 using Meridian.Domain.Common;
@@ -201,6 +202,11 @@ public class MeridianPipelineServiceTests : IDisposable
         Guid tenantId, IScoringEngine scoring, IPocEnricher enricher)
     {
         await using var db = _fx.NewDbContext();
+        var enrollmentService = new OutreachEnrollmentService(
+            new OutreachRepository(db),
+            new ContactRepository(db),
+            new AuditLogRepository(db),
+            NullLogger<OutreachEnrollmentService>.Instance);
         var pipeline = new MeridianPipelineService(
             scoring,
             new[] { enricher },
@@ -209,6 +215,7 @@ public class MeridianPipelineServiceTests : IDisposable
             new OpportunityRepository(db),
             new ContactRepository(db),
             new OutreachRepository(db),
+            enrollmentService,
             new AuditLogRepository(db),
             NullLogger<MeridianPipelineService>.Instance);
 

@@ -25,6 +25,7 @@ public class MeridianPipelineService
     private readonly IOpportunityRepository _opportunityRepo;
     private readonly IContactRepository _contactRepo;
     private readonly IOutreachRepository _outreachRepo;
+    private readonly OutreachEnrollmentService _enrollmentService;
     private readonly IAuditLog _auditLog;
     private readonly ILogger<MeridianPipelineService> _logger;
 
@@ -36,6 +37,7 @@ public class MeridianPipelineService
         IOpportunityRepository opportunityRepo,
         IContactRepository contactRepo,
         IOutreachRepository outreachRepo,
+        OutreachEnrollmentService enrollmentService,
         IAuditLog auditLog,
         ILogger<MeridianPipelineService> logger)
     {
@@ -46,6 +48,7 @@ public class MeridianPipelineService
         _opportunityRepo = opportunityRepo;
         _contactRepo = contactRepo;
         _outreachRepo = outreachRepo;
+        _enrollmentService = enrollmentService;
         _auditLog = auditLog;
         _logger = logger;
     }
@@ -60,12 +63,6 @@ public class MeridianPipelineService
             return ServiceResult<PipelineRunSummary>.Ok(summary);
 
         var (crm, crmCtx) = await ResolveCrmAdapterAsync(tenantId, ct);
-        var sequences = await _outreachRepo.GetSequencesAsync(tenantId, ct);
-
-        // Capture one snapshot per sequence per run; reused across all enrollments
-        // chosen for that sequence so contacts on the same opportunity share an
-        // identical step list (spec §11.3 snapshot-on-enrollment).
-        var snapshotsByseq = new Dictionary<Guid, SequenceSnapshot>();
 
         foreach (var opp in opportunities)
         {
@@ -96,7 +93,7 @@ public class MeridianPipelineService
 
             await CreateCrmDealAsync(opp, tenantId, crm, crmCtx, summary, ct);
 
-            await EnrollContactsAsync(opp, tenantId, sequences, snapshotsByseq, summary, ct);
+            summary.Enrollments += await _enrollmentService.EnrollOpportunityAsync(opp, tenantId, ct);
 
             if (score.Verdict == ScoreVerdict.Pursue) summary.Pursue++;
             else summary.Partner++;
@@ -183,88 +180,6 @@ public class MeridianPipelineService
         await _auditLog.AppendAsync(AuditEvent.Record(
             tenantId, "Opportunity", opp.Id, "DealCreated", "system",
             JsonSerializer.Serialize(new { DealId = dealResult.Value, opp.Title })), ct);
-    }
-
-    private async Task EnrollContactsAsync(
-        Opportunity opp, Guid tenantId,
-        IReadOnlyList<OutreachSequence> sequences,
-        Dictionary<Guid, SequenceSnapshot> snapshotsByseq,
-        PipelineRunSummary summary, CancellationToken ct)
-    {
-        if (opp.Contacts.Count == 0) return;
-
-        var sequence = PickSequence(sequences, opp.Agency.Type);
-        if (sequence is null)
-        {
-            _logger.LogInformation("No outreach sequence configured for tenant {TenantId}; skipping enrollment for {Title}",
-                tenantId, opp.Title);
-            return;
-        }
-
-        if (sequence.Steps.Count == 0)
-        {
-            _logger.LogWarning("Sequence {SequenceId} has no steps; cannot enroll {Title}",
-                sequence.Id, opp.Title);
-            return;
-        }
-
-        if (!snapshotsByseq.TryGetValue(sequence.Id, out var snapshot))
-        {
-            snapshot = await CaptureSnapshotAsync(sequence, ct);
-            snapshotsByseq[sequence.Id] = snapshot;
-        }
-
-        var firstSendAt = DateTimeOffset.UtcNow;
-        foreach (var oc in opp.Contacts)
-        {
-            var contact = await _contactRepo.GetByIdAsync(oc.ContactId, ct);
-            if (contact is null || !contact.IsEnrollable) continue;
-
-            var existing = await _outreachRepo.GetEnrollmentAsync(tenantId, contact.Id, opp.Id, ct);
-            if (existing is not null) continue;
-
-            var enrollment = OutreachEnrollment.Create(
-                tenantId, opp.Id, contact.Id, sequence.Id, snapshot.Id, firstSendAt);
-            await _outreachRepo.AddEnrollmentAsync(enrollment, ct);
-            summary.Enrollments++;
-
-            await _auditLog.AppendAsync(AuditEvent.Record(
-                tenantId, "OutreachEnrollment", enrollment.Id, "EnrollmentCreated", "system",
-                JsonSerializer.Serialize(new { contact.Email, opp.Title, SequenceId = sequence.Id })), ct);
-        }
-
-        sequence.MarkUsed();
-    }
-
-    private async Task<SequenceSnapshot> CaptureSnapshotAsync(
-        OutreachSequence sequence, CancellationToken ct)
-    {
-        // Materialize each step's body from the referenced template so a later
-        // template edit can't change in-flight enrollments.
-        var stepShapes = new List<SequenceStepSnapshot>(sequence.Steps.Count);
-        var ordered = sequence.Steps.OrderBy(s => s.StepNumber).ToList();
-        foreach (var step in ordered)
-        {
-            var template = await _outreachRepo.GetTemplateByIdAsync(step.TemplateId, ct);
-            var body = template?.BodyTemplate ?? string.Empty;
-            stepShapes.Add(new SequenceStepSnapshot(
-                step.StepNumber, step.DelayDays, step.Subject, body,
-                step.SendWindowStart, step.SendWindowEnd, step.SendWindowJitterMinutes));
-        }
-
-        var snapshot = SequenceSnapshot.Capture(sequence.Id, JsonSerializer.Serialize(stepShapes));
-        await _outreachRepo.AddSnapshotAsync(snapshot, ct);
-        return snapshot;
-    }
-
-    private static OutreachSequence? PickSequence(
-        IReadOnlyList<OutreachSequence> sequences, AgencyType agencyType)
-    {
-        // Prefer a sequence that explicitly matches the opportunity's agency type;
-        // fall back to any tenant sequence so MVP tenants with a single generic
-        // sequence still get enrollment without per-agency configuration.
-        var match = sequences.FirstOrDefault(s => s.AgencyType == agencyType);
-        return match ?? sequences.FirstOrDefault();
     }
 
     private async Task<(ICrmAdapter Adapter, CrmConnectionContext Ctx)> ResolveCrmAdapterAsync(

@@ -36,6 +36,11 @@ namespace Meridian.Infrastructure;
 
 public static class DependencyInjection
 {
+    // POC enrichers call external APIs (SAM.gov / USASpending) from inside the
+    // Worker's ProcessingJob. Cap their HttpClient timeout well below the 100s
+    // default so one slow or unreachable endpoint can't stall the pipeline.
+    private static readonly TimeSpan PocEnricherHttpTimeout = TimeSpan.FromSeconds(30);
+
     public static IServiceCollection AddMeridianInfrastructure(
         this IServiceCollection services, string connectionString, IConfiguration configuration)
     {
@@ -77,7 +82,7 @@ public static class DependencyInjection
         services.Configure<SamGovOptions>(configuration.GetSection(SamGovOptions.SectionName));
         services.AddHttpClient<SamGovClient>();
         services.AddTransient<IOpportunitySourceAdapter, SamGovClient>();
-        services.AddHttpClient<SamGovPocEnricher>();
+        services.AddHttpClient<SamGovPocEnricher>(c => c.Timeout = PocEnricherHttpTimeout);
         services.AddTransient<IPocEnricher, SamGovPocEnricher>();
         services.AddHttpClient<SamGovAmendmentMonitor>();
         services.AddTransient<IBidMonitor, SamGovAmendmentMonitor>();
@@ -86,7 +91,7 @@ public static class DependencyInjection
         services.Configure<UsaSpendingOptions>(configuration.GetSection(UsaSpendingOptions.SectionName));
         services.AddHttpClient<UsaSpendingClient>();
         services.AddTransient<IOpportunitySourceAdapter, UsaSpendingClient>();
-        services.AddHttpClient<UsaSpendingPocEnricher>();
+        services.AddHttpClient<UsaSpendingPocEnricher>(c => c.Timeout = PocEnricherHttpTimeout);
         services.AddTransient<IPocEnricher, UsaSpendingPocEnricher>();
 
         // MyBidMatch — Utah state procurement aggregator (subscription-based)
@@ -111,6 +116,10 @@ public static class DependencyInjection
 
         // TAM estimation — derives market-size figures for the pricing-audit feature.
         services.AddScoped<TamEstimationService>();
+
+        // Shared enrollment path — used by both the post-ingest pipeline and the
+        // manual enrichment queue so an opportunity enrolls identically either way.
+        services.AddScoped<OutreachEnrollmentService>();
 
         // Post-ingest pipeline: scoring → enrichment → CRM sync → auto-enrollment.
         // Runs as ProcessingJob in the worker between IngestionJob and SequenceJob.
