@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using Meridian.Application.Outreach;
 using Meridian.Application.Ports;
@@ -158,6 +159,58 @@ public class OutreachEnrollmentServiceTests
 
         enrolled.Should().Be(1, "the first sequence is the fallback when no agency type matches");
         outreach.Enrollments.Single().SequenceId.Should().Be(sequence.Id);
+    }
+
+    [Fact]
+    public async Task Snapshot_subject_falls_back_to_the_template_when_the_step_override_is_blank()
+    {
+        var opp = NewOpportunity();
+        var contact = EnrollableContact();
+        opp.AddContact(OpportunityContact.Create(opp.Id, contact.Id));
+
+        var outreach = new FakeOutreachRepo();
+        var contacts = new FakeContactRepo();
+        contacts.Seed(contact);
+
+        var template = OutreachTemplate.Create(TenantId, "Initial", "Re: {{opportunity.title}}", "Body");
+        var sequence = OutreachSequence.Create(TenantId, "MVP", OpportunityType.Rfp, AgencyType.StateLocal);
+        sequence.AddStep(0, template.Id, "", TimeSpan.Zero, TimeSpan.FromHours(23.99));
+        outreach.SeedTemplate(template);
+        outreach.SeedSequence(sequence);
+
+        await CreateService(outreach, contacts, new FakeAuditLog())
+            .EnrollOpportunityAsync(opp, TenantId, CancellationToken.None);
+
+        var steps = JsonSerializer.Deserialize<List<SequenceStepSnapshot>>(
+            outreach.Snapshots.Single().SnapshotJson)!;
+        steps.Single().Subject.Should().Be("Re: {{opportunity.title}}",
+            "a blank step subject override must fall back to the template's subject");
+    }
+
+    [Fact]
+    public async Task Snapshot_keeps_the_step_subject_override_when_it_is_set()
+    {
+        var opp = NewOpportunity();
+        var contact = EnrollableContact();
+        opp.AddContact(OpportunityContact.Create(opp.Id, contact.Id));
+
+        var outreach = new FakeOutreachRepo();
+        var contacts = new FakeContactRepo();
+        contacts.Seed(contact);
+
+        var template = OutreachTemplate.Create(TenantId, "Initial", "Template subject", "Body");
+        var sequence = OutreachSequence.Create(TenantId, "MVP", OpportunityType.Rfp, AgencyType.StateLocal);
+        sequence.AddStep(0, template.Id, "Step override subject", TimeSpan.Zero, TimeSpan.FromHours(23.99));
+        outreach.SeedTemplate(template);
+        outreach.SeedSequence(sequence);
+
+        await CreateService(outreach, contacts, new FakeAuditLog())
+            .EnrollOpportunityAsync(opp, TenantId, CancellationToken.None);
+
+        var steps = JsonSerializer.Deserialize<List<SequenceStepSnapshot>>(
+            outreach.Snapshots.Single().SnapshotJson)!;
+        steps.Single().Subject.Should().Be("Step override subject",
+            "an explicit step subject override is used verbatim");
     }
 
     // ---- fakes ----

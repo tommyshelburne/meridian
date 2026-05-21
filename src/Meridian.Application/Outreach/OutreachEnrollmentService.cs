@@ -111,8 +111,14 @@ public class OutreachEnrollmentService
         {
             var template = await _outreachRepo.GetTemplateByIdAsync(step.TemplateId, ct);
             var body = template?.BodyTemplate ?? string.Empty;
+            // The step's Subject is an optional override; fall back to the
+            // template's subject when it is blank, as the sequence-builder UI
+            // promises — otherwise the email goes out with an empty subject.
+            var subject = string.IsNullOrWhiteSpace(step.Subject)
+                ? template?.SubjectTemplate ?? string.Empty
+                : step.Subject;
             stepShapes.Add(new SequenceStepSnapshot(
-                step.StepNumber, step.DelayDays, step.Subject, body,
+                step.StepNumber, step.DelayDays, subject, body,
                 step.SendWindowStart, step.SendWindowEnd, step.SendWindowJitterMinutes));
         }
 
