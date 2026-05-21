@@ -20,9 +20,11 @@
 else
 {
     <div class="board">
-        @{ RenderColumn("Pursuing", "pursuing", _pipeline.Pursuing); }
-        @{ RenderColumn("Partnering", "partnering", _pipeline.Partnering); }
-        @{ RenderColumn("Watching", "watching", _pipeline.Watching); }
+        @* RenderColumn returns a RenderFragment — invoke it as an @-expression so
+           the framework renders it. An @{ } statement block would discard it. *@
+        @RenderColumn("Pursuing", "pursuing", _pipeline.Pursuing)
+        @RenderColumn("Partnering", "partnering", _pipeline.Partnering)
+        @RenderColumn("Watching", "watching", _pipeline.Watching)
     </div>
 }
 
