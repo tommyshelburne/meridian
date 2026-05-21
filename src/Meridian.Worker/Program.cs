@@ -83,6 +83,18 @@ if (args.Length >= 2 && args[0] == "--hash-password")
     return;
 }
 
+// `--run-job <JobName>`: run a single registered worker job once and exit.
+// On-demand trigger for jobs that otherwise only run on a fixed time-of-day
+// schedule — e.g. `--run-job Ingestion` drains sources (including the durable
+// webhook queue) without waiting for the 06:00 UTC cadence. Job name is
+// matched case-insensitively against IMeridianJob.Name.
+if (args.Length >= 2 && args[0] == "--run-job")
+{
+    var jobHost = builder.Build();
+    await RunJobAsync(jobHost.Services, args[1]);
+    return;
+}
+
 // Hosted service
 builder.Services.AddHostedService<MeridianWorker>();
 
@@ -123,4 +135,31 @@ static async Task RunSmokeAsync(IServiceProvider services, string tenantSlug)
     await sequence.ExecuteAsync(sp, CancellationToken.None);
 
     logger.LogInformation("Smoke run complete for {Tenant}", tenant.Name);
+}
+
+static async Task RunJobAsync(IServiceProvider services, string jobName)
+{
+    using var scope = services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+
+    var jobs = sp.GetServices<IMeridianJob>().ToList();
+    var job = jobs.FirstOrDefault(j => string.Equals(j.Name, jobName, StringComparison.OrdinalIgnoreCase));
+    if (job is null)
+    {
+        logger.LogError("No job named '{JobName}'. Available jobs: {Available}",
+            jobName, string.Join(", ", jobs.Select(j => j.Name)));
+        return;
+    }
+
+    logger.LogInformation("Running job {JobName} on demand", job.Name);
+    try
+    {
+        await job.ExecuteAsync(sp, CancellationToken.None);
+        logger.LogInformation("Job {JobName} completed", job.Name);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Job {JobName} failed", job.Name);
+    }
 }

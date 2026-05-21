@@ -111,13 +111,46 @@ already exposes UIs for:
 ### Recommended first run
 
 1. Disable all sources except one low-volume source for the chosen tenant.
-2. Start the Worker. It'll run `IngestionJob` at 06:00 UTC (or restart it to
-   trigger immediately).
-3. Within 30 min, `ProcessingJob` picks up new opportunities, scores them,
-   enriches POCs, creates CRM deals, enrolls contacts.
-4. Within 2h, `SequenceJob` sends the first email.
+2. Start the Worker. `IngestionJob` runs daily at **06:00 UTC**. Restarting
+   the Worker does **not** trigger it — only the interval jobs
+   (`ProcessingJob`, `SequenceJob`, `CrmTokenRefreshJob`) run on startup; the
+   time-of-day cron jobs (`IngestionJob`, `BidMonitorJob`) wait for their
+   scheduled time. To ingest immediately, use `--run-job` (see "Triggering a
+   job on demand" below).
+3. Within 30 min of ingestion, `ProcessingJob` picks up new opportunities,
+   scores them, enriches POCs, creates CRM deals, and enrolls contacts.
+   **POC enrichment must find a contact for the opportunity to enroll** — if
+   the SAM.gov/USASpending enrichers find nobody (or their API keys are
+   unset), the opportunity is scored but never enrolled and no email is sent.
+   See "Known gaps".
+4. Within 2h, `SequenceJob` sends the first email for any active enrollment.
 5. Watch `Audit Log` (Portal /activity) for `OpportunityScored`,
-   `DealCreated`, `EnrollmentCreated`, `EmailSent` events.
+   `DealCreated`, and `EmailSent` events.
+
+### Triggering a job on demand
+
+Worker jobs run only on their schedules, and the cron jobs (`IngestionJob` at
+06:00 UTC, `BidMonitorJob` at 12:00 UTC) do **not** run on restart. To run a
+single job immediately, use the `--run-job` flag — it builds the host, runs
+the named job once, and exits (same pattern as `--smoke`):
+
+```bash
+dotnet Meridian.Worker.dll --run-job Ingestion
+```
+
+Job names are case-insensitive: `Ingestion`, `Processing`, `Sequence`,
+`BidMonitor`, `CrmTokenRefresh`. For the full post-ingest chain, run
+`Ingestion`, then `Processing`, then `Sequence` in order.
+
+On the burrow deployment, run it as the `meridian` user with the service's
+environment loaded:
+
+```bash
+sudo systemd-run --pipe --wait --collect --uid=meridian --gid=meridian \
+  -p EnvironmentFile=/etc/meridian/worker.env \
+  --working-directory=/opt/meridian/worker \
+  /usr/bin/dotnet Meridian.Worker.dll --run-job Ingestion
+```
 
 ## Inbound webhooks
 
@@ -266,6 +299,8 @@ To halt sends without redeploying:
 | ~~Reply-To not auto-routed to tenant mailbox-hash~~ | Resolved 2026-05-13 (Slice 1) — set "Inbound domain" in /settings/outbound; replies route per-tenant | — |
 | OOO false positives are invisible in /replies | Operator can only spot them in /activity under `AutoReplyDetected` filter | Slice 4 will surface them in /replies with "Show suppressed" toggle |
 | `Opportunity` has no `OpportunityType` field | Sequence selection is AgencyType-only | Use one sequence per AgencyType per tenant |
+| POC enrichment hangs ~100s per enricher when SAM.gov/USASpending API keys are unset (~3 min/opportunity) and returns no contact | `ProcessingJob` is slow and produces no contact → no enrollment → no email | Configure the enricher API keys on the Worker, or make the enrichers fast-fail when keys are absent |
+| Manual enrichment queue does not enroll | Attaching a contact in /enrichment (or the Pursue decision) creates no `OutreachEnrollment`. `SequenceJob` only sends pre-existing enrollments; enrollment happens solely in `ProcessingJob` for `Status=New` opportunities. An opportunity scored without a contact can never be enrolled or emailed afterward | Fix needed: the "Attach contact" action (or the Pursue decision) must create the enrollment |
 | No automated migration runner in Worker | Worker assumes Portal has applied migrations | Deploy Portal first, or run `dotnet ef database update` |
 | No prod blue-green script per global SUPREME-0 | Manual deploy only | Document the deploy commands in the deploy runbook (separate doc) |
 | ~~No health endpoint on Worker~~ | Resolved 2026-05-13 (Slice 3) — `GET /health` on the Worker's listen URL (default `http://localhost:9090/health`) returns the global health-response shape | — |
