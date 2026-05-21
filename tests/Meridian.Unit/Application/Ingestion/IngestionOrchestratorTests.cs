@@ -150,6 +150,9 @@ public class IngestionOrchestratorTests
         public Task<SourceDefinition?> GetByIdAsync(Guid id, CancellationToken ct)
             => Task.FromResult(_sources.FirstOrDefault(s => s.Id == id));
 
+        public Task<SourceDefinition?> GetByIdAcrossTenantsAsync(Guid id, CancellationToken ct)
+            => Task.FromResult(_sources.FirstOrDefault(s => s.Id == id));
+
         public Task<IReadOnlyList<SourceDefinition>> GetForTenantAsync(Guid tenantId, CancellationToken ct)
             => Task.FromResult<IReadOnlyList<SourceDefinition>>(_sources.Where(s => s.TenantId == tenantId).ToList());
 

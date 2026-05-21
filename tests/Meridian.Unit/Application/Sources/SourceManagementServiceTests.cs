@@ -114,6 +114,9 @@ public class SourceManagementServiceTests
         public Task<SourceDefinition?> GetByIdAsync(Guid id, CancellationToken ct)
             => Task.FromResult(Items.FirstOrDefault(s => s.Id == id));
 
+        public Task<SourceDefinition?> GetByIdAcrossTenantsAsync(Guid id, CancellationToken ct)
+            => Task.FromResult(Items.FirstOrDefault(s => s.Id == id));
+
         public Task<IReadOnlyList<SourceDefinition>> GetForTenantAsync(Guid tenantId, CancellationToken ct)
             => Task.FromResult<IReadOnlyList<SourceDefinition>>(
                 Items.Where(s => s.TenantId == tenantId).ToList());

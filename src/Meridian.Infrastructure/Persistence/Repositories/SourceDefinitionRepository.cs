@@ -13,6 +13,12 @@ public class SourceDefinitionRepository : ISourceDefinitionRepository
     public Task<SourceDefinition?> GetByIdAsync(Guid id, CancellationToken ct) =>
         _db.SourceDefinitions.FirstOrDefaultAsync(s => s.Id == id, ct);
 
+    // Webhook ingestion authenticates via the per-source secret, not a tenant
+    // session, so it must resolve the source by its global id WITHOUT the
+    // tenant query filter — an external caller carries no tenant context.
+    public Task<SourceDefinition?> GetByIdAcrossTenantsAsync(Guid id, CancellationToken ct) =>
+        _db.SourceDefinitions.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == id, ct);
+
     public async Task<IReadOnlyList<SourceDefinition>> GetForTenantAsync(Guid tenantId, CancellationToken ct) =>
         await _db.SourceDefinitions.Where(s => s.TenantId == tenantId).ToListAsync(ct);
 

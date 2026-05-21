@@ -92,7 +92,14 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// Status-code re-execution renders the friendly /not-found Blazor page for the
+// HTML UI only. It must NOT wrap /api/* endpoints: re-executing a JSON request
+// against a Blazor page runs it back through UseAntiforgery and turns a clean
+// 401/404 into a 400 — so external webhook callers can't tell a bad secret from
+// a bad URL.
+app.UseWhen(
+    ctx => !ctx.Request.Path.StartsWithSegments("/api"),
+    branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseAntiforgery();
 
 app.UseAuthentication();

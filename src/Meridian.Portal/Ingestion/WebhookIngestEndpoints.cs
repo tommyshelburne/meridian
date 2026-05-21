@@ -15,7 +15,10 @@ public static class WebhookIngestEndpoints
             IWebhookIngestQueue queue,
             CancellationToken ct) =>
         {
-            var source = await sources.GetByIdAsync(sourceId, ct);
+            // External webhook callers have no Meridian session cookie, so the
+            // source must be resolved across tenants (by its global id) — a
+            // tenant-filtered lookup would find nothing and reject every POST.
+            var source = await sources.GetByIdAcrossTenantsAsync(sourceId, ct);
             if (source is null || source.AdapterType != SourceAdapterType.InboundWebhook)
                 return Results.NotFound();
 
