@@ -211,6 +211,11 @@ public class SequenceEngineServiceTests : IDisposable
         Guid tenantId, IScoringEngine scoring, IPocEnricher enricher)
     {
         await using var db = NewDbContext();
+        var enrollmentService = new OutreachEnrollmentService(
+            new OutreachRepository(db),
+            new ContactRepository(db),
+            new AuditLogRepository(db),
+            NullLogger<OutreachEnrollmentService>.Instance);
         var pipeline = new MeridianPipelineService(
             scoring,
             new[] { enricher },
@@ -219,6 +224,7 @@ public class SequenceEngineServiceTests : IDisposable
             new OpportunityRepository(db),
             new ContactRepository(db),
             new OutreachRepository(db),
+            enrollmentService,
             new AuditLogRepository(db),
             NullLogger<MeridianPipelineService>.Instance);
         return await pipeline.ProcessNewOpportunitiesAsync(tenantId, CancellationToken.None);
