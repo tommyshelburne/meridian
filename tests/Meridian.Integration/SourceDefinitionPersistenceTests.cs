@@ -70,6 +70,41 @@ public class SourceDefinitionPersistenceTests
     }
 
     [Fact]
+    public async Task GetByIdAcrossTenantsAsync_resolves_a_source_with_no_matching_tenant_context()
+    {
+        using var fx = new IntegrationTestFixture();
+        var tenantA = Tenant.Create("Acme", "acme");
+        var tenantB = Tenant.Create("Beta", "beta");
+        var betaWebhook = SourceDefinition.Create(
+            tenantB.Id, SourceAdapterType.InboundWebhook, "Beta webhook", "{}");
+
+        await using (var db = fx.NewDbContext())
+        {
+            db.Tenants.AddRange(tenantA, tenantB);
+            db.SourceDefinitions.Add(betaWebhook);
+            await db.SaveChangesAsync();
+        }
+
+        // A webhook POST carries no tenant context — simulate the worst case by
+        // pointing the context at a DIFFERENT tenant than the source's owner.
+        fx.TenantContext.SetTenant(tenantA.Id);
+        await using (var db = fx.NewDbContext())
+        {
+            var repo = new SourceDefinitionRepository(db);
+
+            // The tenant-scoped lookup cannot see tenant B's source — this is the bug.
+            (await repo.GetByIdAsync(betaWebhook.Id, CancellationToken.None))
+                .Should().BeNull("GetByIdAsync is filtered to the current tenant context");
+
+            // The webhook endpoint's lookup resolves it regardless of context.
+            var resolved = await repo.GetByIdAcrossTenantsAsync(betaWebhook.Id, CancellationToken.None);
+            resolved.Should().NotBeNull();
+            resolved!.TenantId.Should().Be(tenantB.Id);
+            resolved.AdapterType.Should().Be(SourceAdapterType.InboundWebhook);
+        }
+    }
+
+    [Fact]
     public async Task State_transitions_persist_across_sessions()
     {
         using var fx = new IntegrationTestFixture();
