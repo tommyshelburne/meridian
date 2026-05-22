@@ -29,6 +29,9 @@ docs/spec-v3-2026-04-14.md
 docs/portal-spec-2026-04-14.md
 docs/reference/
 
+## Operator runbook (kept local, not published)
+docs/soft-launch-runbook.md
+
 ## Build results
 [Dd]ebug/
 [Rr]elease/
