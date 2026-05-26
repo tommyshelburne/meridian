@@ -70,14 +70,14 @@ else
             @if (opp.Score?.Breakdown is { } b)
             {
                 <ul class="breakdown">
-                    @{ Row("Lane fit (title)", b.LaneTitle, 2); }
-                    @{ Row("Lane fit (description)", b.LaneDescription, 1); }
-                    @{ Row("Agency tier", b.AgencyTier, 2); }
-                    @{ Row("Win themes", b.WinThemes, 2); }
-                    @{ Row("Past performance", b.PastPerformance, 2); }
-                    @{ Row("Procurement vehicle", b.ProcurementVehicle, 2); }
-                    @{ Row("Seat count", b.SeatCount, 2); }
-                    @{ Row("Recompete", b.Recompete, 1); }
+                    @Row("Lane fit (title)", b.LaneTitle, 2)
+                    @Row("Lane fit (description)", b.LaneDescription, 1)
+                    @Row("Agency tier", b.AgencyTier, 2)
+                    @Row("Win themes", b.WinThemes, 2)
+                    @Row("Past performance", b.PastPerformance, 2)
+                    @Row("Procurement vehicle", b.ProcurementVehicle, 2)
+                    @Row("Seat count", b.SeatCount, 2)
+                    @Row("Recompete", b.Recompete, 1)
                 </ul>
                 @if (opp.Score.RecompeteDetected)
                 {
