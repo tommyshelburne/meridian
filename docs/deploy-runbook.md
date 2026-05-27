@@ -157,14 +157,14 @@ env vars. The production secrets go in env vars, NOT files:
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://127.0.0.1:5000
 ConnectionStrings__Meridian=Host=localhost;Database=meridian;Username=meridian;Password=<chosen>
+PostmarkInbound__Username=<chosen>
+PostmarkInbound__Password=<chosen>
 # ...etc per appsettings.json schema...
 
 # /etc/meridian/worker.env
 ASPNETCORE_ENVIRONMENT=Production
 ASPNETCORE_URLS=http://127.0.0.1:9090
 ConnectionStrings__Meridian=Host=localhost;Database=meridian;Username=meridian;Password=<chosen>
-PostmarkInbound__Username=<chosen>
-PostmarkInbound__Password=<chosen>
 Health__Description=Meridian Worker — burrow
 ```
 
