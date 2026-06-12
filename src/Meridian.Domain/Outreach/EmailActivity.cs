@@ -25,6 +25,7 @@ public class EmailActivity
 
     private EmailActivity() { }
 
+    // sentAt is an override for seeded/demo history; live sends omit it.
     public static EmailActivity Record(
         Guid tenantId,
         Guid enrollmentId,
@@ -33,7 +34,8 @@ public class EmailActivity
         int stepNumber,
         string subject,
         string bodyText,
-        string? messageId)
+        string? messageId,
+        DateTimeOffset? sentAt = null)
     {
         return new EmailActivity
         {
@@ -45,7 +47,7 @@ public class EmailActivity
             StepNumber = stepNumber,
             Subject = subject,
             BodyText = bodyText,
-            SentAt = DateTimeOffset.UtcNow,
+            SentAt = sentAt ?? DateTimeOffset.UtcNow,
             MessageId = messageId,
             Status = EmailStatus.Sent
         };
