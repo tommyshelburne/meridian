@@ -14,6 +14,27 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// A recognized one-shot verb with missing arguments must fail fast with
+// usage. Falling through to hosted mode would crash on the already-bound
+// health port and bury the operator's actual mistake (e.g. a pasted
+// command line that split across lines) under a Kestrel bind error.
+var oneShotUsage = new Dictionary<string, (int MinArgs, string Usage)>
+{
+    ["--smoke"] = (2, "--smoke <tenant-slug>"),
+    ["--hash-password"] = (2, "--hash-password <password>"),
+    ["--run-job"] = (2, "--run-job <JobName>"),
+    ["--demo-provision"] = (4, "--demo-provision <slug> <email> <password> [\"Tenant Name\"]"),
+    ["--demo-reset"] = (2, "--demo-reset <slug>"),
+};
+if (args.Length >= 1 && oneShotUsage.TryGetValue(args[0], out var oneShotSpec)
+    && args.Length < oneShotSpec.MinArgs)
+{
+    Console.Error.WriteLine(
+        $"Missing arguments for {args[0]}. Usage: dotnet Meridian.Worker.dll {oneShotSpec.Usage}");
+    Environment.ExitCode = 1;
+    return;
+}
+
 // /health is the only HTTP surface the Worker exposes. Background jobs do
 // the real work. Default to a non-conflict port so this co-locates cleanly
 // with the Portal in dev/prod. Operator overrides via ASPNETCORE_URLS or
