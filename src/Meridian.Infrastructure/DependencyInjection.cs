@@ -1,5 +1,6 @@
 using Meridian.Application.Auth;
 using Meridian.Application.Crm;
+using Meridian.Application.Demo;
 using Meridian.Application.Ports;
 using Meridian.Domain.Tenants;
 using Meridian.Infrastructure.Auth;
@@ -148,6 +149,9 @@ public static class DependencyInjection
         services.AddScoped<OpportunityDetailService>();
         services.AddScoped<ManualEnrichmentService>();
         services.AddScoped<DevSeedService>();
+        services.AddScoped<DemoSeedService>();
+        services.AddScoped<DemoTenantService>();
+        services.AddScoped<IDemoDataWiper, DemoDataWiper>();
         services.AddSingleton<ICrmAdapter, NoopCrmAdapter>();
         services.Configure<PipedriveOptions>(configuration.GetSection(PipedriveOptions.SectionName));
         services.Configure<PipedriveOAuthOptions>(configuration.GetSection(PipedriveOAuthOptions.SectionName));
