@@ -1,3 +1,4 @@
+using Meridian.Application.Demo;
 using Meridian.Application.Opportunities;
 using Meridian.Application.Ports;
 using Microsoft.AspNetCore.DataProtection;
@@ -83,6 +84,26 @@ if (args.Length >= 2 && args[0] == "--hash-password")
     return;
 }
 
+// `--demo-provision <slug> <email> <password> ["Tenant Name"]`: create (or
+// top up) an isolated demo tenant — verified owner login, Console-sandboxed
+// outbound, and the full seeded demo story. Slug must start with "demo-".
+if (args.Length >= 4 && args[0] == "--demo-provision")
+{
+    var demoHost = builder.Build();
+    await RunDemoProvisionAsync(demoHost.Services, args[1], args[2], args[3],
+        args.Length >= 5 ? args[4] : "Meridian Demo");
+    return;
+}
+
+// `--demo-reset <slug>`: wipe a demo tenant's data and re-seed the pristine
+// story between prospects. The operator login survives.
+if (args.Length >= 2 && args[0] == "--demo-reset")
+{
+    var demoHost = builder.Build();
+    await RunDemoResetAsync(demoHost.Services, args[1]);
+    return;
+}
+
 // `--run-job <JobName>`: run a single registered worker job once and exit.
 // On-demand trigger for jobs that otherwise only run on a fixed time-of-day
 // schedule — e.g. `--run-job Ingestion` drains sources (including the durable
@@ -135,6 +156,58 @@ static async Task RunSmokeAsync(IServiceProvider services, string tenantSlug)
     await sequence.ExecuteAsync(sp, CancellationToken.None);
 
     logger.LogInformation("Smoke run complete for {Tenant}", tenant.Name);
+}
+
+static async Task RunDemoProvisionAsync(
+    IServiceProvider services, string slug, string email, string password, string tenantName)
+{
+    using var scope = services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+
+    var demo = sp.GetRequiredService<DemoTenantService>();
+    var result = await demo.ProvisionAsync(
+        new DemoProvisionRequest(slug, tenantName, email, "Demo Operator", password),
+        CancellationToken.None);
+
+    if (!result.IsSuccess)
+    {
+        logger.LogError("Demo provision failed: {Error}", result.Error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    var r = result.Value!;
+    logger.LogInformation(
+        "Demo tenant '{Slug}' {Verb} (tenant {TenantId}). Seeded: {Opps} opportunities, " +
+        "{Contacts} contacts, {Sequences} sequences, {Enrollments} enrollments, {Activities} email activities. " +
+        "Login: {Email} at /login",
+        r.Slug, r.AlreadyExisted ? "already existed" : "created", r.TenantId,
+        r.Seeded.Opportunities, r.Seeded.Contacts, r.Seeded.Sequences,
+        r.Seeded.Enrollments, r.Seeded.EmailActivities, email);
+}
+
+static async Task RunDemoResetAsync(IServiceProvider services, string slug)
+{
+    using var scope = services.CreateScope();
+    var sp = scope.ServiceProvider;
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+
+    var demo = sp.GetRequiredService<DemoTenantService>();
+    var result = await demo.ResetAsync(slug, CancellationToken.None);
+
+    if (!result.IsSuccess)
+    {
+        logger.LogError("Demo reset failed: {Error}", result.Error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    var s = result.Value!;
+    logger.LogInformation(
+        "Demo tenant '{Slug}' reset to pristine state: {Opps} opportunities, {Contacts} contacts, " +
+        "{Sequences} sequences, {Enrollments} enrollments, {Activities} email activities",
+        slug, s.Opportunities, s.Contacts, s.Sequences, s.Enrollments, s.EmailActivities);
 }
 
 static async Task RunJobAsync(IServiceProvider services, string jobName)
